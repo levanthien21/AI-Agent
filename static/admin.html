@@ -24,7 +24,12 @@
   .m{margin:5px 0;padding:6px 10px;border-radius:10px;max-width:85%;white-space:pre-wrap}
   .m.me{background:#2563eb;color:#fff;margin-left:auto} .m.bot{background:#e5e7eb}
   .hint{color:#6b7280;font-size:12px}
-  #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:9px 16px;border-radius:8px;display:none}
+  #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:9px 16px;border-radius:8px;display:none;z-index:9999}
+  .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:999;align-items:center;justify-content:center;padding:20px}
+  .modal-box{background:#fff;width:100%;max-width:700px;border-radius:10px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,0.3)}
+  .modal-head{background:#dc2626;color:#fff;padding:12px 16px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+  .modal-body{padding:16px;background:#1e1e1e;color:#10b981;font-family:monospace;font-size:13px;overflow-x:auto;max-height:400px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+  .modal-foot{padding:12px 16px;background:#f3f4f6;display:flex;justify-content:flex-end;gap:8px}
 </style>
 </head>
 <body>
@@ -76,17 +81,52 @@
   </section>
 </main>
 <div id="toast"></div>
+
+<!-- Modal xem Log -->
+<div id="logModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span>Nhật ký lỗi hệ thống (Server Log)</span>
+      <button onclick="document.getElementById('logModal').style.display='none'" style="background:transparent;padding:0;font-size:20px;line-height:1">&times;</button>
+    </div>
+    <div id="logText" class="modal-body"></div>
+    <div class="modal-foot">
+      <button class="gray" onclick="document.getElementById('logModal').style.display='none'">Đóng</button>
+      <button id="copyBtn" onclick="copyLog()">Copy Log</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let KEY = localStorage.getItem("admin_key") || "", cur = null, sid = "test-" + Math.random().toString(36).slice(2);
 const $ = id => document.getElementById(id);
 $("key").value = KEY;
 
 function toast(t) { const e = $("toast"); e.textContent = t; e.style.display = "block"; setTimeout(() => e.style.display = "none", 2800); }
+
+function showLog(text) {
+  $("logText").textContent = text;
+  $("logModal").style.display = "flex";
+}
+function copyLog() {
+  navigator.clipboard.writeText($("logText").textContent);
+  const btn = document.getElementById("copyBtn");
+  btn.textContent = "Đã Copy!";
+  setTimeout(() => btn.textContent = "Copy Log", 2000);
+}
+
 async function api(path, opts = {}) {
   opts.headers = Object.assign({ "X-Admin-Key": KEY }, opts.headers || {});
   const r = await fetch("/api" + path, opts);
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) { toast(j.detail || "Lỗi " + r.status); throw new Error(j.detail); }
+  if (!r.ok) { 
+    if (r.status >= 500 || (j.detail && j.detail.includes("Server Error"))) {
+      showLog(j.detail || "Server Error " + r.status);
+    } else {
+      toast(j.detail || "Lỗi " + r.status); 
+    }
+    throw new Error(j.detail); 
+  }
   return j;
 }
 const post = (p, b, m = "POST") => api(p, { method: m, headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) });
