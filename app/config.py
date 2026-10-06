@@ -14,9 +14,6 @@ EMBED_MODEL = os.getenv("EMBED_MODEL", "gemini-embedding-001")
 EMBED_DIM = 768
 ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",") if o.strip()]
 
-DATA_DIR = BASE_DIR / "data" / "domains"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-
 TOP_K = 5            # số đoạn kiến thức đưa vào prompt
 MIN_SCORE = 0.35     # dưới ngưỡng này coi như không liên quan
 HISTORY_TURNS = 8    # số lượt hội thoại nhớ trong mỗi phiên
