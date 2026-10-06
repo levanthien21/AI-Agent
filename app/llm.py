@@ -1,5 +1,6 @@
 """Bọc Gemini API: tạo embedding và sinh câu trả lời."""
 import math
+import time
 from google import genai
 from google.genai import types
 
@@ -20,13 +21,22 @@ def embed(texts: list[str], task_type: str = "RETRIEVAL_DOCUMENT") -> list[list[
     out = []
     for i in range(0, len(texts), 100):
         batch = texts[i : i + 100]
-        res = client().models.embed_content(
-            model=config.EMBED_MODEL,
-            contents=batch,
-            config=types.EmbedContentConfig(
-                task_type=task_type, output_dimensionality=config.EMBED_DIM
-            ),
-        )
+        for attempt in range(3):
+            try:
+                res = client().models.embed_content(
+                    model=config.EMBED_MODEL,
+                    contents=batch,
+                    config=types.EmbedContentConfig(
+                        task_type=task_type, output_dimensionality=config.EMBED_DIM
+                    ),
+                )
+                break
+            except Exception as e:
+                msg = str(e)
+                transient = any(c in msg for c in ("429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE"))
+                if not transient or attempt == 2:
+                    raise
+                time.sleep(0.5 * (attempt + 1))
         for e in res.embeddings:
             vec = e.values
             norm = math.sqrt(sum(x * x for x in vec))
