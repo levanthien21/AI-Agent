@@ -44,7 +44,7 @@ class ChatIn(BaseModel):
 def debug_models():
     try:
         from app.llm import client
-        models = client().models.list_models()
+        models = client().models.list()
         return {"models": [m.name for m in models]}
     except Exception as e:
         return {"error": str(e)}
