@@ -61,7 +61,7 @@ def chat(body: ChatIn):
         raise
     except Exception as e:
         log.exception("chat failed")
-        raise HTTPException(500, "Hệ thống AI đang quá tải (Google đang nghẽn mạng), vui lòng thử lại sau vài phút.")
+        raise HTTPException(500, f"Lỗi từ Google AI: {str(e)}")
 
 
 @app.get("/api/domains/{name}/public")
