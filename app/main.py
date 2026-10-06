@@ -46,9 +46,11 @@ def chat(body: ChatIn):
         return agent.reply(body.domain, body.session_id, body.message)
     except store.DomainError:
         raise
-    except Exception:
+    except Exception as e:
+        import traceback
         log.exception("chat failed")
-        raise HTTPException(500, "Hệ thống đang bận, vui lòng thử lại sau ít phút.")
+        tb = traceback.format_exc().splitlines()
+        raise HTTPException(500, "DEBUG " + type(e).__name__ + ": " + str(e)[:400] + " || " + " | ".join(l.strip() for l in tb[-8:-1] if "app/" in l))
 
 
 @app.get("/api/domains/{name}/public")
