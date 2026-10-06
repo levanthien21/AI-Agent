@@ -1,12 +1,16 @@
-"""Kho kiến thức theo lĩnh vực (domain) lưu trên Supabase với pgvector."""
-import re
+"""Kho kiến thức theo lĩnh vực (domain) lưu trên Firebase Firestore."""
+import base64
+import json
 import threading
+import time
+import uuid
 
-from supabase import Client, create_client
+import firebase_admin
+from firebase_admin import credentials, firestore
+import numpy as np
 
 from . import config
 
-_NAME_RE = re.compile(r"^[a-z0-9_-]{1,40}$")
 _lock = threading.Lock()
 
 DEFAULT_CONFIG = {
@@ -19,118 +23,173 @@ DEFAULT_CONFIG = {
 class DomainError(Exception):
     pass
 
-_sb_client = None
+_db = None
 
-def _sb() -> Client:
-    global _sb_client
-    if _sb_client is None:
-        if not config.SUPABASE_URL or not config.SUPABASE_KEY:
-            raise RuntimeError("Chưa cấu hình SUPABASE_URL và SUPABASE_KEY")
-        _sb_client = create_client(config.SUPABASE_URL, config.SUPABASE_KEY)
-    return _sb_client
+def db() -> firestore.firestore.Client:
+    global _db
+    if _db is None:
+        if not config.FIREBASE_BASE64:
+            raise RuntimeError("Chưa cấu hình FIREBASE_BASE64")
+        try:
+            cred_json = base64.b64decode(config.FIREBASE_BASE64).decode("utf-8")
+            cred = credentials.Certificate(json.loads(cred_json))
+            if not firebase_admin._apps:
+                firebase_admin.initialize_app(cred)
+        except Exception as e:
+            raise RuntimeError(f"Lỗi đọc Firebase credential: {e}")
+        _db = firestore.client()
+    return _db
+
+
+# RAM Cache để tránh tốn quá nhiều lượt đọc (Reads) của Firebase mỗi khi chat
+# Lưu trữ dạng: { name: (timestamp, chunks_list, numpy_matrix) }
+_cache = {}
+CACHE_TTL = 300  # 5 phút cache
+
+def _load_cache(name: str):
+    docs = db().collection("chunks").where("domain_name", "==", name).stream()
+    chunks = []
+    vecs = []
+    for doc in docs:
+        d = doc.to_dict()
+        chunks.append({"text": d["text"], "source": d["source"]})
+        vecs.append(d["embedding"])
+    
+    if not chunks:
+        _cache[name] = (time.time(), [], np.zeros((0, config.EMBED_DIM), dtype=np.float32))
+    else:
+        _cache[name] = (time.time(), chunks, np.array(vecs, dtype=np.float32))
+
+def _get_cache(name: str):
+    if name not in _cache or time.time() - _cache[name][0] > CACHE_TTL:
+        _load_cache(name)
+    return _cache[name][1], _cache[name][2]
 
 
 def exists(name: str) -> bool:
-    res = _sb().table("domains").select("name").eq("name", name).execute()
-    return len(res.data) > 0
-
+    return db().collection("domains").document(name).get().exists
 
 def list_domains() -> list[dict]:
-    res = _sb().rpc("get_domain_stats", {}).execute()
-    return [
-        {
-            "name": r["name"],
-            "display_name": r["display_name"] or r["name"],
-            "chunks": r["chunk_count"],
-            "sources": r["source_count"],
-        }
-        for r in res.data
-    ]
-
+    domains = []
+    for doc in db().collection("domains").stream():
+        d = doc.to_dict()
+        name = doc.id
+        
+        # Đếm số lượng chunks cực nhanh nhờ Aggregate Query của Firestore (tốn 1 lượt đọc)
+        chunks_ref = db().collection("chunks").where("domain_name", "==", name)
+        count_query = chunks_ref.count().get()
+        chunk_count = count_query[0][0].value if count_query else 0
+        
+        domains.append({
+            "name": name,
+            "display_name": d.get("config", {}).get("display_name") or name,
+            "chunks": chunk_count,
+            "sources": 0 # Giản lược ở màn danh sách để tiết kiệm reads
+        })
+    return domains
 
 def create_domain(name: str, **cfg) -> dict:
-    if not _NAME_RE.match(name):
-        raise DomainError("Tên lĩnh vực chỉ gồm a-z, 0-9, '-' hoặc '_' (tối đa 40 ký tự)")
     if exists(name):
         raise DomainError("Lĩnh vực đã tồn tại")
     
     config_data = dict(DEFAULT_CONFIG)
     config_data.update({k: v for k, v in cfg.items() if v is not None and k in DEFAULT_CONFIG})
-    
-    _sb().table("domains").insert({"name": name, "config": config_data}).execute()
+    db().collection("domains").document(name).set({"config": config_data})
     return config_data
 
-
 def delete_domain(name: str) -> None:
-    _sb().table("domains").delete().eq("name", name).execute()
-
+    db().collection("domains").document(name).delete()
+    _cache.pop(name, None)
 
 def get_config(name: str) -> dict:
-    res = _sb().table("domains").select("config").eq("name", name).execute()
-    if not res.data:
+    doc = db().collection("domains").document(name).get()
+    if not doc.exists:
         raise DomainError("Không tìm thấy lĩnh vực")
     cfg = dict(DEFAULT_CONFIG)
-    cfg.update(res.data[0]["config"])
+    cfg.update(doc.to_dict().get("config", {}))
     return cfg
-
 
 def save_config(name: str, updates: dict) -> dict:
     cfg = get_config(name)
     cfg.update({k: v for k, v in updates.items() if k in DEFAULT_CONFIG and v is not None})
-    _sb().table("domains").update({"config": cfg}).eq("name", name).execute()
+    db().collection("domains").document(name).update({"config": cfg})
     return cfg
 
-
 def add_chunks(name: str, source: str, texts: list[str], vectors) -> int:
-    """Thêm kiến thức; nạp lại cùng tên file sẽ xoá bản cũ trên Supabase rồi thêm lại."""
     with _lock:
         if not exists(name):
             raise DomainError("Không tìm thấy lĩnh vực")
         
         # Xoá cũ
-        _sb().table("chunks").delete().eq("domain_name", name).eq("source", source).execute()
-        
-        # Thêm mới theo batch (mỗi batch tối đa 500 dòng)
-        vec_list = vectors.tolist()
-        rows = [
-            {"domain_name": name, "source": source, "text": t, "embedding": v}
-            for t, v in zip(texts, vec_list)
-        ]
-        
-        for i in range(0, len(rows), 500):
-            _sb().table("chunks").insert(rows[i : i + 500]).execute()
+        old_docs = db().collection("chunks").where("domain_name", "==", name).where("source", "==", source).stream()
+        batch = db().batch()
+        deletes = 0
+        for doc in old_docs:
+            batch.delete(doc.reference)
+            deletes += 1
+            if deletes == 500:
+                batch.commit()
+                batch = db().batch()
+                deletes = 0
+        if deletes > 0:
+            batch.commit()
             
-    return len(rows)
-
+        # Thêm mới
+        batch = db().batch()
+        adds = 0
+        vec_list = vectors.tolist()
+        for t, v in zip(texts, vec_list):
+            doc_ref = db().collection("chunks").document(uuid.uuid4().hex)
+            batch.set(doc_ref, {
+                "domain_name": name,
+                "source": source,
+                "text": t,
+                "embedding": v
+            })
+            adds += 1
+            if adds == 500:
+                batch.commit()
+                batch = db().batch()
+                adds = 0
+        if adds > 0:
+            batch.commit()
+            
+        _cache.pop(name, None)  # Tuỳ ý invalidate cache
+    return len(texts)
 
 def delete_source(name: str, source: str) -> int:
     with _lock:
-        # Supabase API trả về dữ liệu đã xoá trong res.data
-        res = _sb().table("chunks").delete().eq("domain_name", name).eq("source", source).execute()
-        return len(res.data)
-
+        old_docs = db().collection("chunks").where("domain_name", "==", name).where("source", "==", source).stream()
+        batch = db().batch()
+        count = 0
+        for doc in old_docs:
+            batch.delete(doc.reference)
+            count += 1
+            if count % 500 == 0:
+                batch.commit()
+                batch = db().batch()
+        if count % 500 != 0:
+            batch.commit()
+            
+        _cache.pop(name, None)
+        return count
 
 def list_sources(name: str) -> list[dict]:
-    # Lấy nhanh tất cả sources của domain rồi đếm (hoặc dùng RPC, nhưng ở đây đếm dict cho nhanh)
-    res = _sb().table("chunks").select("source").eq("domain_name", name).execute()
+    chunks, _ = _get_cache(name)
     counts = {}
-    for r in res.data:
-        counts[r["source"]] = counts.get(r["source"], 0) + 1
+    for c in chunks:
+        counts[c["source"]] = counts.get(c["source"], 0) + 1
     return [{"source": s, "chunks": n} for s, n in counts.items()]
 
-
 def search(name: str, qvec, k: int, min_score: float) -> list[dict]:
-    res = _sb().rpc(
-        "match_chunks",
-        {
-            "query_embedding": qvec.tolist(),
-            "match_domain": name,
-            "match_count": k,
-            "match_threshold": min_score,
-        },
-    ).execute()
+    chunks, vecs = _get_cache(name)
+    if not chunks:
+        return []
+    
+    scores = vecs @ qvec
+    order = np.argsort(-scores)[:k]
     
     return [
-        {"text": r["text"], "source": r["source"], "score": r["similarity"]}
-        for r in res.data
+        {**chunks[i], "score": float(scores[i])} 
+        for i in order if scores[i] >= min_score
     ]
