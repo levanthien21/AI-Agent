@@ -43,9 +43,13 @@ class ChatIn(BaseModel):
 @app.get("/api/debug/models")
 def debug_models():
     try:
-        from app.llm import client
-        models = client().models.list()
-        return {"models": [m.name for m in models]}
+        from app.config import GEMINI_API_KEY
+        import urllib.request, json
+        url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_API_KEY}"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode())
+            return {"models": [m["name"] for m in data.get("models", []) if "generateContent" in m.get("supportedGenerationMethods", [])]}
     except Exception as e:
         return {"error": str(e)}
 
