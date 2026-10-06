@@ -4,7 +4,6 @@ import logging
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import agent, config, ingest, store
@@ -15,7 +14,6 @@ app.add_middleware(
     CORSMiddleware, allow_origins=config.ALLOWED_ORIGINS, allow_methods=["*"], allow_headers=["*"]
 )
 STATIC = config.BASE_DIR / "static"
-app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 
 def admin(x_admin_key: str = Header(default="")):
@@ -124,6 +122,13 @@ def delete_source(name: str, source: str):
 def index():
     return RedirectResponse("/admin")
 
+
+@app.get("/static/{filename}")
+def serve_static(filename: str):
+    path = STATIC / filename
+    if not path.is_file():
+        raise HTTPException(404)
+    return FileResponse(path)
 
 @app.get("/admin")
 def admin_page():

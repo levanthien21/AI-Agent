@@ -7,7 +7,6 @@ import uuid
 
 import firebase_admin
 from firebase_admin import credentials, firestore
-import numpy as np
 
 from . import config
 
@@ -56,9 +55,9 @@ def _load_cache(name: str):
         vecs.append(d["embedding"])
     
     if not chunks:
-        _cache[name] = (time.time(), [], np.zeros((0, config.EMBED_DIM), dtype=np.float32))
+        _cache[name] = (time.time(), [], [])
     else:
-        _cache[name] = (time.time(), chunks, np.array(vecs, dtype=np.float32))
+        _cache[name] = (time.time(), chunks, vecs)
 
 def _get_cache(name: str):
     if name not in _cache or time.time() - _cache[name][0] > CACHE_TTL:
@@ -137,8 +136,7 @@ def add_chunks(name: str, source: str, texts: list[str], vectors) -> int:
         # Thêm mới
         batch = db().batch()
         adds = 0
-        vec_list = vectors.tolist()
-        for t, v in zip(texts, vec_list):
+        for t, v in zip(texts, vectors):
             doc_ref = db().collection("chunks").document(uuid.uuid4().hex)
             batch.set(doc_ref, {
                 "domain_name": name,
@@ -181,15 +179,16 @@ def list_sources(name: str) -> list[dict]:
         counts[c["source"]] = counts.get(c["source"], 0) + 1
     return [{"source": s, "chunks": n} for s, n in counts.items()]
 
-def search(name: str, qvec, k: int, min_score: float) -> list[dict]:
+def search(name: str, qvec: list[float], k: int, min_score: float) -> list[dict]:
     chunks, vecs = _get_cache(name)
     if not chunks:
         return []
     
-    scores = vecs @ qvec
-    order = np.argsort(-scores)[:k]
-    
-    return [
-        {**chunks[i], "score": float(scores[i])} 
-        for i in order if scores[i] >= min_score
-    ]
+    results = []
+    for i, v in enumerate(vecs):
+        score = sum(a * b for a, b in zip(v, qvec))
+        if score >= min_score:
+            results.append({**chunks[i], "score": score})
+            
+    results.sort(key=lambda x: x["score"], reverse=True)
+    return results[:k]
