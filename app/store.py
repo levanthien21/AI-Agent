@@ -30,10 +30,17 @@ def db() -> firestore.firestore.Client:
         if not config.FIREBASE_BASE64:
             raise RuntimeError("Chưa cấu hình FIREBASE_BASE64")
         try:
-            b64_str = config.FIREBASE_BASE64.strip()
-            b64_str += "=" * ((4 - len(b64_str) % 4) % 4)
-            cred_json = base64.b64decode(b64_str).decode("utf-8")
-            cred = credentials.Certificate(json.loads(cred_json))
+            # Try raw JSON first
+            try:
+                cred_dict = json.loads(config.FIREBASE_BASE64)
+            except ValueError:
+                # If not JSON, assume Base64
+                b64_str = config.FIREBASE_BASE64.strip()
+                b64_str += "=" * ((4 - len(b64_str) % 4) % 4)
+                cred_json = base64.b64decode(b64_str).decode("utf-8")
+                cred_dict = json.loads(cred_json)
+                
+            cred = credentials.Certificate(cred_dict)
             if not firebase_admin._apps:
                 firebase_admin.initialize_app(cred)
         except Exception as e:
