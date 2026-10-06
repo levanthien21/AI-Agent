@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><title>Quản trị AI Agent</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  *{box-sizing:border-box}
+  body{font:14px system-ui,sans-serif;margin:0;background:#f3f4f6;color:#111}
+  header{background:#1e293b;color:#fff;padding:14px 20px;display:flex;gap:12px;align-items:center}
+  header h1{font-size:17px;margin:0;flex:1}
+  main{display:grid;grid-template-columns:240px 1fr;gap:16px;padding:16px;max-width:1100px;margin:auto}
+  .card{background:#fff;border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  h2{font-size:15px;margin:0 0 10px}
+  input,textarea{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font:inherit;margin-bottom:8px}
+  textarea{min-height:70px;resize:vertical}
+  button{background:#2563eb;color:#fff;border:0;border-radius:6px;padding:8px 14px;cursor:pointer;font:inherit}
+  button.red{background:#dc2626} button.gray{background:#64748b}
+  ul{list-style:none;padding:0;margin:0}
+  .dom{padding:9px 10px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between}
+  .dom:hover,.dom.active{background:#e0e7ff}
+  .src{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #eee}
+  label{font-weight:600;display:block;margin-bottom:3px}
+  .msgs{height:230px;overflow-y:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:8px;margin-bottom:8px}
+  .m{margin:5px 0;padding:6px 10px;border-radius:10px;max-width:85%;white-space:pre-wrap}
+  .m.me{background:#2563eb;color:#fff;margin-left:auto} .m.bot{background:#e5e7eb}
+  .hint{color:#6b7280;font-size:12px}
+  #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:9px 16px;border-radius:8px;display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>🤖 Quản trị AI Agent</h1>
+  <input id="key" type="password" placeholder="Admin key" style="width:200px;margin:0">
+  <button onclick="login()">Đăng nhập</button>
+</header>
+<main>
+  <aside>
+    <div class="card">
+      <h2>Lĩnh vực</h2>
+      <ul id="domains"></ul>
+      <hr style="border:0;border-top:1px solid #eee;margin:12px 0">
+      <input id="newName" placeholder="tên-mới (a-z, 0-9, -)">
+      <button onclick="createDomain()" style="width:100%">+ Tạo lĩnh vực</button>
+    </div>
+  </aside>
+  <section id="detail" style="display:none">
+    <div class="card">
+      <h2>Cấu hình: <span id="dname"></span></h2>
+      <label>Tên hiển thị (tiêu đề khung chat)</label><input id="display_name">
+      <label>Vai trò / giọng điệu (persona)</label>
+      <textarea id="persona"></textarea>
+      <label>Lời chào</label><input id="greeting">
+      <label>Câu trả lời khi không có thông tin</label><textarea id="fallback"></textarea>
+      <button onclick="saveConfig()">Lưu cấu hình</button>
+      <button class="red" onclick="delDomain()" style="float:right">Xoá lĩnh vực</button>
+    </div>
+    <div class="card">
+      <h2>Nạp kiến thức</h2>
+      <label>Tải file (.xlsx, .csv, .txt, .md)</label>
+      <input id="file" type="file" multiple accept=".xlsx,.xls,.csv,.txt,.md">
+      <button onclick="upload()">Tải lên & huấn luyện</button>
+      <p class="hint">Excel/CSV: mỗi dòng là một mẩu kiến thức (dòng đầu là tên cột, vd: Câu hỏi | Trả lời hoặc Sản phẩm | Giá | Mô tả). Nạp lại file cùng tên sẽ thay bản cũ.</p>
+      <label>Hoặc gõ trực tiếp</label>
+      <textarea id="text" placeholder="Ví dụ: Cửa hàng mở cửa 8h-21h mỗi ngày, kể cả lễ."></textarea>
+      <button onclick="addText()">Thêm</button>
+      <h2 style="margin-top:16px">Nguồn đã nạp</h2>
+      <div id="sources"></div>
+    </div>
+    <div class="card">
+      <h2>Thử chat</h2>
+      <div class="msgs" id="msgs"></div>
+      <input id="chatIn" placeholder="Nhập câu hỏi rồi Enter" onkeydown="if(event.key==='Enter')send()">
+      <button class="gray" onclick="resetChat()">Cuộc trò chuyện mới</button>
+      <p class="hint">Nhúng vào website: <code id="embed"></code></p>
+    </div>
+  </section>
+</main>
+<div id="toast"></div>
+<script>
+let KEY = localStorage.getItem("admin_key") || "", cur = null, sid = "test-" + Math.random().toString(36).slice(2);
+const $ = id => document.getElementById(id);
+$("key").value = KEY;
+
+function toast(t) { const e = $("toast"); e.textContent = t; e.style.display = "block"; setTimeout(() => e.style.display = "none", 2800); }
+async function api(path, opts = {}) {
+  opts.headers = Object.assign({ "X-Admin-Key": KEY }, opts.headers || {});
+  const r = await fetch("/api" + path, opts);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { toast(j.detail || "Lỗi " + r.status); throw new Error(j.detail); }
+  return j;
+}
+const post = (p, b, m = "POST") => api(p, { method: m, headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) });
+
+function login() { KEY = $("key").value; localStorage.setItem("admin_key", KEY); loadDomains(); }
+
+async function loadDomains() {
+  const list = await api("/domains"), ul = $("domains"); ul.textContent = "";
+  list.forEach(d => {
+    const li = document.createElement("li"); li.className = "dom" + (d.name === cur ? " active" : "");
+    const a = document.createElement("span"); a.textContent = d.display_name;
+    const b = document.createElement("span"); b.className = "hint"; b.textContent = d.chunks;
+    li.append(a, b); li.onclick = () => select(d.name); ul.appendChild(li);
+  });
+}
+async function createDomain() {
+  const name = $("newName").value.trim(); if (!name) return;
+  await post("/domains", { name, display_name: name }); $("newName").value = "";
+  await loadDomains(); select(name);
+}
+async function select(name) {
+  cur = name; const d = await api("/domains/" + name);
+  $("detail").style.display = "block"; $("dname").textContent = name;
+  ["display_name", "persona", "greeting", "fallback"].forEach(k => $(k).value = d.config[k] || "");
+  const box = $("sources"); box.textContent = "";
+  if (!d.sources.length) box.textContent = "Chưa có kiến thức nào.";
+  d.sources.forEach(s => {
+    const row = document.createElement("div"); row.className = "src";
+    const t = document.createElement("span"); t.textContent = s.source + " (" + s.chunks + " mục)";
+    const x = document.createElement("button"); x.className = "red"; x.textContent = "Xoá";
+    x.onclick = async () => { await api("/domains/" + name + "/sources/" + encodeURIComponent(s.source), { method: "DELETE" }); select(name); loadDomains(); };
+    row.append(t, x); box.appendChild(row);
+  });
+  $("embed").textContent = `<script src="${location.origin}/static/widget.js" data-domain="${name}"></` + `script>`;
+  resetChat(); loadDomains();
+}
+async function saveConfig() {
+  await post("/domains/" + cur, { display_name: $("display_name").value, persona: $("persona").value, greeting: $("greeting").value, fallback: $("fallback").value }, "PUT");
+  toast("Đã lưu"); loadDomains();
+}
+async function delDomain() {
+  if (!confirm("Xoá toàn bộ lĩnh vực " + cur + " và kiến thức?")) return;
+  await api("/domains/" + cur, { method: "DELETE" }); cur = null; $("detail").style.display = "none"; loadDomains();
+}
+async function upload() {
+  const files = $("file").files; if (!files.length) return toast("Chọn file trước");
+  for (const f of files) {
+    const fd = new FormData(); fd.append("file", f); toast("Đang xử lý " + f.name + "...");
+    const r = await api("/domains/" + cur + "/upload", { method: "POST", body: fd });
+    toast(f.name + ": " + r.chunks + " mục");
+  }
+  $("file").value = ""; select(cur);
+}
+async function addText() {
+  const t = $("text").value.trim(); if (!t) return;
+  await post("/domains/" + cur + "/text", { source: "ghi-chu-" + new Date().toISOString().slice(0, 16), text: t });
+  $("text").value = ""; toast("Đã thêm"); select(cur);
+}
+function bubble(t, who) { const d = document.createElement("div"); d.className = "m " + who; d.textContent = t; $("msgs").appendChild(d); $("msgs").scrollTop = 1e9; return d; }
+async function send() {
+  const t = $("chatIn").value.trim(); if (!t) return; $("chatIn").value = ""; bubble(t, "me");
+  const b = bubble("...", "bot");
+  try {
+    const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ domain: cur, session_id: sid, message: t }) });
+    const j = await r.json(); b.textContent = r.ok ? j.answer + (j.sources.length ? "\n— nguồn: " + j.sources.join(", ") : "") : j.detail;
+  } catch (e) { b.textContent = "Lỗi kết nối"; }
+}
+function resetChat() { sid = "test-" + Math.random().toString(36).slice(2); $("msgs").textContent = ""; bubble($("greeting").value || "Xin chào!", "bot"); }
+if (KEY) loadDomains().catch(() => {});
+</script>
+</body>
+</html>
