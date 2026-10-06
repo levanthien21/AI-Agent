@@ -74,7 +74,11 @@
     <div class="card">
       <h2>Thử chat</h2>
       <div class="msgs" id="msgs"></div>
-      <input id="chatIn" placeholder="Nhập câu hỏi rồi Enter" onkeydown="if(event.key==='Enter')send()">
+      <div style="display:flex;gap:8px">
+        <button id="micBtn" class="gray" title="Bấm để nói" style="padding:0 12px;border-radius:50%">🎤</button>
+        <input id="chatIn" placeholder="Nhập câu hỏi hoặc bấm 🎤 để nói..." onkeydown="if(event.key==='Enter')send()" style="flex:1;margin:0">
+        <button onclick="send()" style="margin:0">Gửi</button>
+      </div>
       <button class="gray" onclick="resetChat()">Cuộc trò chuyện mới</button>
       <p class="hint">Nhúng vào website: <code id="embed"></code></p>
     </div>
@@ -191,9 +195,21 @@ async function send() {
   const b = bubble("...", "bot");
   try {
     const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ domain: cur, session_id: sid, message: t }) });
-    const j = await r.json(); b.textContent = r.ok ? j.answer + (j.sources.length ? "\n— nguồn: " + j.sources.join(", ") : "") : j.detail;
+    const j = await r.json(); b.textContent = r.ok ? j.answer : j.detail;
   } catch (e) { b.textContent = "Lỗi kết nối"; }
 }
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SR) {
+  const rec = new SR();
+  rec.lang = "vi-VN"; rec.interimResults = true; rec.continuous = false;
+  let listening = false, heard = "";
+  rec.onstart = () => { listening = true; $("micBtn").style.background = "#dc2626"; $("micBtn").style.color = "#fff"; $("chatIn").placeholder = "Đang nghe..."; };
+  rec.onresult = (e) => { heard = Array.from(e.results).map(r => r[0].transcript).join(""); $("chatIn").value = heard; };
+  rec.onerror = () => heard = "";
+  rec.onend = () => { listening = false; $("micBtn").style.background = ""; $("micBtn").style.color = ""; $("chatIn").placeholder = "Nhập câu hỏi hoặc bấm 🎤 để nói..."; if (heard.trim()) send(); heard = ""; };
+  $("micBtn").onclick = () => { if (listening) rec.stop(); else { $("chatIn").value = ""; heard = ""; try { rec.start(); } catch(e){} } };
+} else { $("micBtn").style.display = "none"; }
 function resetChat() { sid = "test-" + Math.random().toString(36).slice(2); $("msgs").textContent = ""; bubble($("greeting").value || "Xin chào!", "bot"); }
 if (KEY) loadDomains().catch(() => {});
 </script>
