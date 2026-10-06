@@ -42,13 +42,7 @@ class ChatIn(BaseModel):
 
 @app.post("/api/chat")
 def chat(body: ChatIn):
-    try:
-        return agent.reply(body.domain, body.session_id, body.message)
-    except store.DomainError:
-        raise
-    except Exception as e:
-        log.exception("chat failed")
-        raise HTTPException(500, "Hệ thống AI đang quá tải (High demand từ Google), vui lòng thử lại sau vài phút.")
+    return agent.reply(body.domain, body.session_id, body.message)
 
 
 @app.get("/api/domains/{name}/public")
