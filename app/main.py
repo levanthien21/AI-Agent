@@ -53,6 +53,25 @@ def debug_models():
     except Exception as e:
         return {"error": str(e)}
 
+
+@app.get("/api/debug/probe")
+def debug_probe():
+    import time
+    from google.genai import types
+    from app.llm import client
+    out = {}
+    for m in ["gemini-flash-latest", "gemini-2.5-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-3.8-flash"]:
+        t = time.time()
+        try:
+            r = client().models.generate_content(
+                model=m, contents="Trả lời đúng 1 từ: OK",
+                config=types.GenerateContentConfig(http_options=types.HttpOptions(timeout=6000)),
+            )
+            out[m] = {"ok": True, "sec": round(time.time() - t, 2), "text": (r.text or "")[:30]}
+        except Exception as e:
+            out[m] = {"ok": False, "sec": round(time.time() - t, 2), "err": str(e)[:200]}
+    return out
+
 @app.post("/api/chat")
 def chat(body: ChatIn):
     try:
