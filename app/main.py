@@ -40,6 +40,15 @@ class ChatIn(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
 
 
+@app.get("/api/debug/models")
+def debug_models():
+    try:
+        from app.llm import client
+        models = client().models.list_models()
+        return {"models": [m.name for m in models]}
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.post("/api/chat")
 def chat(body: ChatIn):
     try:
