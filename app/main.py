@@ -50,7 +50,7 @@ def chat(body: ChatIn):
         import traceback
         log.exception("chat failed")
         tb = traceback.format_exc().splitlines()
-        raise HTTPException(500, "DEBUG " + type(e).__name__ + ": " + str(e)[:400] + " || " + " | ".join(l.strip() for l in tb[-8:-1] if "app/" in l))
+        raise HTTPException(500, "DEBUG " + type(e).__name__ + ": " + str(e)[:200] + " || " + " | ".join(l.strip() for l in tb if "/var/task/app/" in l))
 
 
 @app.get("/api/domains/{name}/public")
