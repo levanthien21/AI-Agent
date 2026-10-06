@@ -45,12 +45,20 @@ def generate(system: str, history: list[dict], user_message: str) -> str:
     ]
     contents.append(types.Content(role="user", parts=[types.Part(text=user_message)]))
     
-    try:
-        res = client().models.generate_content(
-            model=config.CHAT_MODEL,
-            contents=contents,
-            config=types.GenerateContentConfig(system_instruction=system, temperature=0.3),
-        )
-        return (res.text or "").strip()
-    except Exception as e:
-        raise e
+    last_err = None
+    for model in config.CHAT_MODELS:
+        try:
+            res = client().models.generate_content(
+                model=model,
+                contents=contents,
+                config=types.GenerateContentConfig(system_instruction=system, temperature=0.3),
+            )
+            return (res.text or "").strip()
+        except Exception as e:
+            last_err = e
+            msg = str(e)
+            # Model quá tải / hết quota / không tồn tại -> thử model kế tiếp
+            if any(c in msg for c in ("503", "429", "404", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "NOT_FOUND")):
+                continue
+            raise
+    raise last_err

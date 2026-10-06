@@ -40,44 +40,15 @@ class ChatIn(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
 
 
-@app.get("/api/debug/models")
-def debug_models():
-    try:
-        from app.config import GEMINI_API_KEY
-        import urllib.request, json
-        url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_API_KEY}"
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req) as response:
-            data = json.loads(response.read().decode())
-            return {"models": [m["name"] for m in data.get("models", []) if "generateContent" in m.get("supportedGenerationMethods", [])]}
-    except Exception as e:
-        return {"error": str(e)}
-
-
-@app.get("/api/debug/probe")
-def debug_probe(m: str = "gemini-flash-latest"):
-    import time
-    from google.genai import types
-    from app.llm import client
-    t = time.time()
-    try:
-        r = client().models.generate_content(
-            model=m, contents="Trả lời đúng 1 từ: OK",
-            config=types.GenerateContentConfig(http_options=types.HttpOptions(timeout=10000)),
-        )
-        return {"model": m, "ok": True, "sec": round(time.time() - t, 2), "text": (r.text or "")[:30]}
-    except Exception as e:
-        return {"model": m, "ok": False, "sec": round(time.time() - t, 2), "err": str(e)[:300]}
-
 @app.post("/api/chat")
 def chat(body: ChatIn):
     try:
         return agent.reply(body.domain, body.session_id, body.message)
     except store.DomainError:
         raise
-    except Exception as e:
+    except Exception:
         log.exception("chat failed")
-        raise HTTPException(500, f"Lỗi từ Google AI: {str(e)}")
+        raise HTTPException(500, "Hệ thống đang bận, vui lòng thử lại sau ít phút.")
 
 
 @app.get("/api/domains/{name}/public")
