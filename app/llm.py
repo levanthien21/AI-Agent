@@ -44,9 +44,23 @@ def generate(system: str, history: list[dict], user_message: str) -> str:
         types.Content(role=h["role"], parts=[types.Part(text=h["text"])]) for h in history
     ]
     contents.append(types.Content(role="user", parts=[types.Part(text=user_message)]))
-    res = client().models.generate_content(
-        model=config.CHAT_MODEL,
-        contents=contents,
-        config=types.GenerateContentConfig(system_instruction=system, temperature=0.3),
-    )
-    return (res.text or "").strip()
+    
+    models_to_try = [config.CHAT_MODEL, "gemini-1.5-flash", "gemini-1.5-pro"]
+    last_err = None
+    
+    for m in models_to_try:
+        try:
+            res = client().models.generate_content(
+                model=m,
+                contents=contents,
+                config=types.GenerateContentConfig(system_instruction=system, temperature=0.3),
+            )
+            return (res.text or "").strip()
+        except Exception as e:
+            last_err = e
+            err_str = str(e)
+            if "503" in err_str or "UNAVAILABLE" in err_str or "404" in err_str or "NOT_FOUND" in err_str:
+                continue
+            raise e
+            
+    raise last_err
