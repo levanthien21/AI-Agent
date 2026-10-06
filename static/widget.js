@@ -20,14 +20,17 @@
     ".aia-m.me{background:" + color + ";color:#fff;margin-left:auto;border-bottom-right-radius:4px}",
     ".aia-form{display:flex;border-top:1px solid #e5e7eb}",
     ".aia-form input{flex:1;border:0;padding:13px;font-size:14px;outline:none}",
-    ".aia-form button{border:0;background:none;color:" + color + ";font-weight:600;padding:0 16px;cursor:pointer}"
+    ".aia-form button{border:0;background:none;color:" + color + ";font-weight:600;padding:0 16px;cursor:pointer}",
+    ".aia-form button.aia-mic{font-size:22px;padding:0;color:#fff;background:" + color + ";margin:6px;border-radius:50%;width:44px;height:44px;flex:none;line-height:44px}",
+    ".aia-form button.aia-mic.on{background:#dc2626;animation:aia-pulse 1s infinite}",
+    "@keyframes aia-pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.6)}70%{box-shadow:0 0 0 14px rgba(220,38,38,0)}100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}}"
   ].join("\n");
   document.head.appendChild(css);
 
   var btn = document.createElement("button"); btn.className = "aia-btn"; btn.textContent = "💬";
   var box = document.createElement("div"); box.className = "aia-box";
   box.innerHTML = '<div class="aia-head">Hỗ trợ</div><div class="aia-msgs"></div>' +
-    '<form class="aia-form"><input placeholder="Nhập tin nhắn..." maxlength="2000"><button>Gửi</button></form>';
+    '<form class="aia-form"><button type="button" class="aia-mic" title="Bấm để nói" aria-label="Nói để soạn tin">🎤</button><input placeholder="Nhập hoặc bấm 🎤 để nói..." maxlength="2000"><button>Gửi</button></form>';
   document.body.append(btn, box);
   var msgs = box.querySelector(".aia-msgs"), form = box.querySelector("form"), input = box.querySelector("input");
 
@@ -42,16 +45,59 @@
 
   btn.onclick = function () { box.classList.toggle("open"); if (box.classList.contains("open")) input.focus(); };
 
+  // ----- Giọng nói: nói để soạn tin, tự gửi, và đọc to câu trả lời -----
+  var micBtn = box.querySelector(".aia-mic");
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var voiceMode = false, rec = null, listening = false, heard = "";
+
+  function speak(text) {
+    if (!("speechSynthesis" in window) || !text) return;
+    window.speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = "vi-VN"; u.rate = 0.95;
+    window.speechSynthesis.speak(u);
+  }
+
+  if (!SR) {
+    micBtn.style.display = "none"; // trình duyệt không hỗ trợ (vd. Firefox)
+  } else {
+    rec = new SR();
+    rec.lang = "vi-VN"; rec.interimResults = true; rec.continuous = false;
+    rec.onstart = function () { listening = true; micBtn.classList.add("on"); input.placeholder = "Đang nghe bạn nói..."; };
+    rec.onresult = function (ev) {
+      var t = "";
+      for (var i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript;
+      heard = t; input.value = t;
+    };
+    rec.onerror = function (ev) {
+      if (ev.error === "not-allowed" || ev.error === "service-not-allowed") add("Bạn hãy cho phép trình duyệt dùng micro nhé.", "bot");
+      else if (ev.error === "no-speech") add("Mình chưa nghe thấy gì, bạn thử nói lại nhé.", "bot");
+      heard = "";
+    };
+    rec.onend = function () {
+      listening = false; micBtn.classList.remove("on"); input.placeholder = "Nhập hoặc bấm 🎤 để nói...";
+      if (heard.trim()) { voiceMode = true; form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event("submit", { cancelable: true })); }
+      heard = "";
+    };
+    micBtn.onclick = function () {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (listening) { rec.stop(); return; }
+      input.value = ""; heard = "";
+      try { rec.start(); } catch (e) { /* đang chạy */ }
+    };
+  }
+
   form.onsubmit = function (e) {
     e.preventDefault();
     var text = input.value.trim(); if (!text) return;
+    var spoken = voiceMode; voiceMode = false;
     input.value = ""; add(text, "me");
     var typing = add("...", "bot");
     fetch(server + "/api/chat", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ domain: domain, session_id: sid, message: text })
     }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.detail); return j; }); })
-      .then(function (j) { typing.textContent = j.answer; msgs.scrollTop = msgs.scrollHeight; })
+      .then(function (j) { typing.textContent = j.answer; msgs.scrollTop = msgs.scrollHeight; if (spoken) speak(j.answer); })
       .catch(function (err) { typing.textContent = err.message || "Lỗi kết nối, vui lòng thử lại."; });
   };
 })();
