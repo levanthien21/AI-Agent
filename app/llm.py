@@ -45,7 +45,7 @@ def generate(system: str, history: list[dict], user_message: str) -> str:
     ]
     contents.append(types.Content(role="user", parts=[types.Part(text=user_message)]))
     
-    models_to_try = [config.CHAT_MODEL, "gemini-1.5-flash", "gemini-1.5-pro"]
+    models_to_try = [config.CHAT_MODEL, "gemini-3.8-pro"]
     last_err = None
     
     for m in models_to_try:
