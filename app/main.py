@@ -1,9 +1,9 @@
 import hmac
 import logging
 
-from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 from . import agent, config, ingest, store
@@ -21,8 +21,13 @@ def admin(x_admin_key: str = Header(default="")):
         raise HTTPException(401, "Sai hoặc chưa cấu hình ADMIN_KEY")
 
 
+@app.exception_handler(Exception)
+async def _global_error(request: Request, exc: Exception):
+    import traceback
+    return JSONResponse({"detail": f"Server Error: {traceback.format_exc()}"}, status_code=500)
+
 @app.exception_handler(store.DomainError)
-async def _domain_error(_, exc: store.DomainError):
+async def _domain_error(request: Request, exc: store.DomainError):
     from fastapi.responses import JSONResponse
 
     return JSONResponse({"detail": str(exc)}, status_code=400)
