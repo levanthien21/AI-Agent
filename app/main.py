@@ -43,8 +43,17 @@ class ChatIn(BaseModel):
 @app.post("/api/chat")
 def chat(body: ChatIn):
     try:
+        return agent.reply(body.domain, body.session_id, body.message)
+    except store.DomainError:
+        raise
+    except Exception:
+        log.exception("chat failed")
+        raise HTTPException(500, "Hệ thống đang bận, vui lòng thử lại sau ít phút.")
+
+@app.post("/api/chat/stream")
+def chat_stream(body: ChatIn):
+    try:
         from fastapi.responses import StreamingResponse
-        # Dùng StreamingResponse và thêm headers chống buffer của Vercel/Nginx
         headers = {
             "Cache-Control": "no-cache, no-transform",
             "X-Accel-Buffering": "no",
