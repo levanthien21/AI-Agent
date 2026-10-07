@@ -51,7 +51,7 @@ def ingest_text(domain: str, source_name: str, text: str) -> int:
     chunks = _chunk_text(text)
     if not chunks:
         return 0
-    # Tr?c ti?p l?u text, khng c?n vector embedding (Context Stuffing)\n    vecs = [[0.0]*10 for _ in chunks]
+    vecs = [[0.0]*10 for _ in chunks]
     store.add_chunks(domain, source_name, chunks, vecs)
     return len(chunks)
 
