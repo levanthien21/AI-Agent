@@ -36,8 +36,8 @@
       <div class="p-4 border-b border-gray-200">
         <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Tài khoản (Domain)</h2>
         <div class="flex gap-2">
-          <input id="newName" placeholder="Tên khách hàng mới" class="border border-gray-300 rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:border-blue-500">
-          <button onclick="createDomain()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium">+</button>
+          <input id="newName" placeholder="Tên miền (viết liền, ko dấu)" class="border border-gray-300 rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:border-blue-500">
+          <button onclick="createDomain()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium whitespace-nowrap">+ Tạo</button>
         </div>
       </div>
       <ul id="domains" class="flex-1 overflow-y-auto p-2 space-y-1"></ul>
@@ -255,8 +255,9 @@ Liên hệ hỗ trợ: 1900 xxxx..."></textarea>
     $("detail").style.display = "flex"; 
     $("dname").textContent = name;
     
+    const encName = encodeURIComponent(name);
     // Config
-    const d = await api("/domains/" + name);
+    const d = await api("/domains/" + encName);
     ["display_name", "persona", "greeting", "fallback"].forEach(k => $(k).value = d.config[k] || "");
     
     // Tokens
@@ -266,7 +267,7 @@ Liên hệ hỗ trợ: 1900 xxxx..."></textarea>
 
     // Main Knowledge
     $("knowledge_status").textContent = "Đang tải dữ liệu...";
-    const k_data = await api("/domains/" + name + "/knowledge");
+    const k_data = await api("/domains/" + encName + "/knowledge");
     $("main_knowledge").value = k_data.text || "";
     $("knowledge_status").textContent = "";
 
@@ -277,7 +278,7 @@ Liên hệ hỗ trợ: 1900 xxxx..."></textarea>
       const row = document.createElement("div"); row.className = "flex justify-between items-center py-1 border-b border-gray-100";
       const t = document.createElement("span"); t.textContent = s.source + " (" + s.chunks + " đoạn)";
       const x = document.createElement("button"); x.className = "text-red-500 hover:text-red-700 text-xs"; x.textContent = "Xoá";
-      x.onclick = async () => { await api("/domains/" + name + "/sources/" + encodeURIComponent(s.source), { method: "DELETE" }); select(name); loadDomains(); };
+      x.onclick = async () => { await api("/domains/" + encName + "/sources/" + encodeURIComponent(s.source), { method: "DELETE" }); select(name); loadDomains(); };
       row.append(t, x); box.appendChild(row);
     });
     
@@ -288,14 +289,14 @@ Liên hệ hỗ trợ: 1900 xxxx..."></textarea>
   }
 
   async function saveConfig() {
-    await post("/domains/" + cur, { display_name: $("display_name").value, persona: $("persona").value, greeting: $("greeting").value, fallback: $("fallback").value }, "PUT");
+    await post("/domains/" + encodeURIComponent(cur), { display_name: $("display_name").value, persona: $("persona").value, greeting: $("greeting").value, fallback: $("fallback").value }, "PUT");
     toast("Đã lưu cấu hình"); loadDomains();
   }
 
   async function saveKnowledge() {
     const text = $("main_knowledge").value;
     $("knowledge_status").textContent = "Đang nhúng (embed) kiến thức, vui lòng đợi...";
-    const r = await post("/domains/" + cur + "/knowledge", { text }, "PUT");
+    const r = await post("/domains/" + encodeURIComponent(cur) + "/knowledge", { text }, "PUT");
     $("knowledge_status").textContent = "Đã huấn luyện thành công! (" + r.chunks + " đoạn)";
     toast("Lưu kiến thức thành công");
     loadDomains();
@@ -305,7 +306,7 @@ Liên hệ hỗ trợ: 1900 xxxx..."></textarea>
   async function addTokens() {
     const amount = parseInt($("add_tokens_amount").value) || 0;
     if (amount <= 0) return toast("Nhập số lượng token hợp lệ");
-    const r = await post("/domains/" + cur + "/tokens", { amount });
+    const r = await post("/domains/" + encodeURIComponent(cur) + "/tokens", { amount });
     $("token_badge").textContent = r.tokens.toLocaleString();
     $("big_token_display").textContent = r.tokens.toLocaleString();
     $("add_tokens_amount").value = "";
@@ -314,14 +315,14 @@ Liên hệ hỗ trợ: 1900 xxxx..."></textarea>
 
   async function delDomain() {
     if (!confirm("Xoá toàn bộ khách hàng " + cur + " và kiến thức?")) return;
-    await api("/domains/" + cur, { method: "DELETE" }); cur = null; $("detail").style.display = "none"; $("empty-state").style.display = "flex"; loadDomains();
+    await api("/domains/" + encodeURIComponent(cur), { method: "DELETE" }); cur = null; $("detail").style.display = "none"; $("empty-state").style.display = "flex"; loadDomains();
   }
 
   async function upload() {
     const files = $("file").files; if (!files.length) return toast("Chọn file trước");
     for (const f of files) {
       const fd = new FormData(); fd.append("file", f); toast("Đang xử lý " + f.name + "...");
-      const r = await api("/domains/" + cur + "/upload", { method: "POST", body: fd });
+      const r = await api("/domains/" + encodeURIComponent(cur) + "/upload", { method: "POST", body: fd });
       toast(f.name + ": " + r.chunks + " đoạn");
     }
     $("file").value = ""; select(cur);
