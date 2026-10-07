@@ -32,13 +32,12 @@ def reply(domain: str, session_id: str, message: str) -> dict:
         prev_user = next((h["text"] for h in reversed(history) if h["role"] == "user"), "")
         query = f"{prev_user}\n{message}"
 
-    try:
-        hits = store.search(domain, llm.embed_query(query), config.TOP_K, config.MIN_SCORE)
-    except Exception as e:
-        print("Embedding failed, skipping RAG:", e)
-        hits = []
+    # S? d?ng tr?c ti?p Context Stuffing cho DeepSeek (128k context)
+    all_text = store.get_all_knowledge(domain)
+    if len(all_text) > 50000:
+        all_text = all_text[:50000] + "\n...(cn ti?p)"
+    knowledge = all_text or "(khng c thng tin lin quan)"
 
-    knowledge = "\n".join(f"- {h['text']}" for h in hits) or "(khng c thng tin lin quan)"
     prompt = f"KI?N TH?C:\n{knowledge}\n\nTIN NH?N C?A KHACH:\n{message}"
 
     max_tok = cfg.get("max_tokens", 150)
@@ -47,7 +46,6 @@ def reply(domain: str, session_id: str, message: str) -> dict:
     try:
         import concurrent.futures
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            # LLM tr? l?i v?i d? di b? gi?i h?n d? tang t?c
             future = executor.submit(llm.generate, _system_prompt(cfg), history[-config.HISTORY_TURNS * 2 :], prompt, max_tok)
             answer = future.result(timeout=timeout_sec)
         
@@ -56,18 +54,14 @@ def reply(domain: str, session_id: str, message: str) -> dict:
     except concurrent.futures.TimeoutError:
         answer = cfg["fallback"]
     except Exception as e:
-        # X? ly khi LLM l?i
         answer = cfg["fallback"]
         
-    # Tr? tokens (1 ky t? = ~0.25 token, nhung d? don gi?n ta tnh 1 token = 1 ky t? text + answer)
-    # ho?c c? g?i token l don v? ky t? cho d? kinh doanh
     cost = len(message) + len(answer)
     store.deduct_tokens(domain, cost)
 
-    # Luu l?ch s? v?i tin nh?n g?c (khng km ki?n th?c) d? prompt g?n
     history += [{"role": "user", "text": message}, {"role": "model", "text": answer}]
     del history[: -config.HISTORY_TURNS * 2]
-    return {"answer": answer, "sources": sorted({h["source"] for h in hits})}
+    return {"answer": answer, "sources": []}
 
 
 def reset(domain: str, session_id: str) -> None:
@@ -88,13 +82,11 @@ def reply_stream(domain: str, session_id: str, message: str):
             prev_user = next((h["text"] for h in reversed(history) if h["role"] == "user"), "")
             query = f"{prev_user}\n{message}"
 
-        try:
-            hits = store.search(domain, llm.embed_query(query), config.TOP_K, config.MIN_SCORE)
-        except Exception as e:
-            print("Embedding failed, skipping RAG:", e)
-            hits = []
+        all_text = store.get_all_knowledge(domain)
+        if len(all_text) > 50000:
+            all_text = all_text[:50000] + "\n...(cn ti?p)"
+        knowledge = all_text or "(khng c thng tin lin quan)"
 
-        knowledge = "\n".join(f"- {h['text']}" for h in hits) or "(khng c thng tin lin quan)"
         prompt = f"KI?N TH?C:\n{knowledge}\n\nTIN NH?N C?A KHACH:\n{message}"
 
         max_tok = cfg.get("max_tokens", 150)

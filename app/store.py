@@ -192,6 +192,11 @@ def list_sources(name: str) -> list[dict]:
         counts[c["source"]] = counts.get(c["source"], 0) + 1
     return [{"source": s, "chunks": n} for s, n in counts.items()]
 
+def get_all_knowledge(name: str) -> str:
+    chunks, _ = _get_cache(name)
+    texts = [doc["text"] for doc in chunks]
+    return "\n\n".join(texts)
+
 def search(name: str, qvec: list[float], k: int, min_score: float) -> list[dict]:
     chunks, vecs = _get_cache(name)
     if not chunks:
