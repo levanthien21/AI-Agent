@@ -188,8 +188,8 @@ def set_main_knowledge(name: str, body: KnowledgeIn):
         try:
             chunks = ingest.ingest_text(name, "main-knowledge", body.text)
         except Exception as e:
-            if "429" in str(e) or "quota" in str(e).lower() or "exhausted" in str(e).lower():
-                raise HTTPException(status_code=429, detail="Hệ thống nhúng tài liệu (Gemini) đang bị quá tải hoặc hết hạn mức. Vui lòng thử lại sau 1-2 phút hoặc nâng cấp tài khoản Gemini.")
+            if any(k in str(e).lower() for k in ["429", "quota", "exhausted", "timeout"]):
+                raise HTTPException(status_code=429, detail="API nhúng tài liệu (Google Gemini) đang quá tải, hết hạn mức hoặc bị treo (Timeout). Vui lòng nâng cấp tài khoản hoặc thử lại sau.")
             raise HTTPException(status_code=500, detail=f"Lỗi khi huấn luyện: {str(e)}")
     return {"chunks": chunks, "ok": True}
 
