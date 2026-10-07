@@ -26,33 +26,52 @@ def ds_client() -> OpenAI:
         _ds_client = OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url="https://api.deepseek.com", timeout=8.0)
     return _ds_client
 
+_openai_client = None
+
+def openai_client() -> OpenAI:
+    global _openai_client
+    if _openai_client is None:
+        if not config.OPENAI_API_KEY:
+            raise RuntimeError("Chua c?u hnh OPENAI_API_KEY")
+        _openai_client = OpenAI(api_key=config.OPENAI_API_KEY, timeout=10.0)
+    return _openai_client
+
 def embed(texts: list[str], task_type: str = "RETRIEVAL_DOCUMENT") -> list[list[float]]:
     """Tr? v? m?ng 2 chi?u cc vector da chu?n ho d? dng cosine = tch v hu?ng."""
     out = []
+    
+    # N?u c OPENAI_API_KEY th dng OpenAI text-embedding-3-small (r? & x?n), n?u khng dng Gemini
+    use_openai = bool(config.OPENAI_API_KEY)
+    
     for i in range(0, len(texts), 100):
         batch = texts[i : i + 100]
         for attempt in range(3):
             try:
-                res = client().models.embed_content(
-                    model=config.EMBED_MODEL,
-                    contents=batch,
-                    config=types.EmbedContentConfig(
-                        task_type=task_type, output_dimensionality=config.EMBED_DIM
-                    ),
-                )
+                if use_openai:
+                    res = openai_client().embeddings.create(input=batch, model="text-embedding-3-small", dimensions=768)
+                    for e in res.data:
+                        out.append(e.embedding)
+                else:
+                    res = client().models.embed_content(
+                        model=config.EMBED_MODEL,
+                        contents=batch,
+                        config=types.EmbedContentConfig(
+                            task_type=task_type, output_dimensionality=config.EMBED_DIM
+                        ),
+                    )
+                    for e in res.embeddings:
+                        vec = e.values
+                        norm = math.sqrt(sum(x * x for x in vec))
+                        if norm > 1e-9:
+                            vec = [x / norm for x in vec]
+                        out.append(vec)
                 break
             except Exception as e:
                 msg = str(e)
-                transient = any(c in msg for c in ("429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE"))
+                transient = any(c in msg for c in ("429", "503", "RESOURCE_EXHAUSTED", "UNAVAILABLE", "timeout", "Rate limit"))
                 if not transient or attempt == 2:
                     raise
                 time.sleep(0.5 * (attempt + 1))
-        for e in res.embeddings:
-            vec = e.values
-            norm = math.sqrt(sum(x * x for x in vec))
-            if norm > 1e-9:
-                vec = [x / norm for x in vec]
-            out.append(vec)
     return out
 
 def embed_query(text: str) -> list[float]:

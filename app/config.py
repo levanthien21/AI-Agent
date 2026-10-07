@@ -8,6 +8,7 @@ load_dotenv(BASE_DIR / ".env")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 ADMIN_KEY = os.getenv("ADMIN_KEY", "")
 FIREBASE_BASE64 = os.getenv("FIREBASE_BASE64", "")
 CHAT_MODEL = os.getenv("CHAT_MODEL", "deepseek-chat")
