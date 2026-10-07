@@ -145,7 +145,12 @@ def delete_domain(name: str):
 async def upload(name: str, file: UploadFile = File(...)):
     store.get_config(name)
     data = await file.read()
-    n = ingest.ingest_file(name, file.filename or "upload", data)
+    try:
+        n = ingest.ingest_file(name, file.filename or "upload", data)
+    except Exception as e:
+        if "429" in str(e) or "quota" in str(e).lower() or "exhausted" in str(e).lower():
+            raise HTTPException(status_code=429, detail="Hệ thống nhúng tài liệu (Gemini) đang bị quá tải hoặc hết hạn mức. Vui lòng thử lại sau 1-2 phút hoặc nâng cấp tài khoản Gemini.")
+        raise HTTPException(status_code=500, detail=f"Lỗi khi xử lý file: {str(e)}")
     return {"source": file.filename, "chunks": n}
 
 
@@ -180,7 +185,12 @@ def set_main_knowledge(name: str, body: KnowledgeIn):
     # Add new if not empty
     chunks = 0
     if body.text.strip():
-        chunks = ingest.ingest_text(name, "main-knowledge", body.text)
+        try:
+            chunks = ingest.ingest_text(name, "main-knowledge", body.text)
+        except Exception as e:
+            if "429" in str(e) or "quota" in str(e).lower() or "exhausted" in str(e).lower():
+                raise HTTPException(status_code=429, detail="Hệ thống nhúng tài liệu (Gemini) đang bị quá tải hoặc hết hạn mức. Vui lòng thử lại sau 1-2 phút hoặc nâng cấp tài khoản Gemini.")
+            raise HTTPException(status_code=500, detail=f"Lỗi khi huấn luyện: {str(e)}")
     return {"chunks": chunks, "ok": True}
 
 
