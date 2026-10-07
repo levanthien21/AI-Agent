@@ -1,4 +1,4 @@
-"""Bọc Gemini API: tạo embedding và sinh câu trả lời."""
+﻿"""Bọc Gemini API: tạo embedding và sinh câu trả lời."""
 import math
 import time
 from google import genai
@@ -13,7 +13,7 @@ def client() -> genai.Client:
     if _client is None:
         if not config.GEMINI_API_KEY:
             raise RuntimeError("Chưa cấu hình GEMINI_API_KEY trong file .env")
-        _client = genai.Client(api_key=config.GEMINI_API_KEY)
+        _client = genai.Client(api_key=config.GEMINI_API_KEY, http_options={"timeout": 8.0})
     return _client
 
 def embed(texts: list[str], task_type: str = "RETRIEVAL_DOCUMENT") -> list[list[float]]:
@@ -69,5 +69,6 @@ def generate_stream(system: str, history: list[dict], user_message: str, max_tok
 
 def generate(system: str, history: list[dict], user_message: str, max_tokens: int = 150) -> str:
     return "".join(generate_stream(system, history, user_message, max_tokens)).strip()
+
 
 

@@ -1,4 +1,4 @@
-"""Lõi agent: truy xuất kiến thức theo lĩnh vực rồi sinh câu trả lời."""
+﻿"""Lõi agent: truy xuất kiến thức theo lĩnh vực rồi sinh câu trả lời."""
 from collections import defaultdict
 
 from . import config, llm, store
@@ -94,8 +94,8 @@ def reply_stream(domain: str, session_id: str, message: str):
             yield chunk
     except Exception as e:
         if not full_answer:
-            yield cfg.get("fallback", "Hệ thống đang bận, vui lòng thử lại sau ít phút.")
-            full_answer = cfg.get("fallback", "Hệ thống đang bận.")
+            yield (cfg.get("fallback") or "Hệ thống đang bận, vui lòng thử lại sau ít phút.")
+            full_answer = (cfg.get("fallback") or "Hệ thống đang bận.")
         else:
             yield "\n[Lỗi kết nối bị ngắt]"
 
@@ -104,3 +104,4 @@ def reply_stream(domain: str, session_id: str, message: str):
         store.deduct_tokens(domain, cost)
         history += [{"role": "user", "text": message}, {"role": "model", "text": full_answer}]
         del history[: -config.HISTORY_TURNS * 2]
+
