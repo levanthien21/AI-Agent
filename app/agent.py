@@ -20,10 +20,13 @@ def _system_prompt(cfg: dict) -> str:
 
 
 def reply(domain: str, session_id: str, message: str) -> dict:
-    cfg = store.get_config(domain)  # ném DomainError nếu domain không tồn tại
+    cfg = store.get_config(domain)
+    tokens_left = cfg.get("tokens", 0)
+    if tokens_left <= 0:
+        return {"answer": "Hệ thống AI đang tạm ngưng do hết hạn mức (tokens). Vui lòng liên hệ quản trị viên để nạp thêm.", "sources": []}
+
     history = _sessions[(domain, session_id)]
 
-    # Câu hỏi ngắn kiểu "còn size L không?" cần ngữ cảnh câu trước để tìm đúng
     query = message
     if len(message) < 25 and history:
         prev_user = next((h["text"] for h in reversed(history) if h["role"] == "user"), "")
@@ -34,6 +37,11 @@ def reply(domain: str, session_id: str, message: str) -> dict:
     prompt = f"KIẾN THỨC:\n{knowledge}\n\nTIN NHẮN CỦA KHÁCH:\n{message}"
 
     answer = llm.generate(_system_prompt(cfg), history[-config.HISTORY_TURNS * 2 :], prompt) or cfg["fallback"]
+    
+    # Trừ tokens (1 ký tự = ~0.25 token, nhưng để đơn giản ta tính 1 token = 1 ký tự text + answer)
+    # hoặc cứ gọi token là đơn vị ký tự cho dễ kinh doanh
+    cost = len(message) + len(answer)
+    store.deduct_tokens(domain, cost)
 
     # Lưu lịch sử với tin nhắn gốc (không kèm kiến thức) để prompt gọn
     history += [{"role": "user", "text": message}, {"role": "model", "text": answer}]

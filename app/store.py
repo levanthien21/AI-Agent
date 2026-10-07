@@ -17,6 +17,8 @@ DEFAULT_CONFIG = {
     "persona": "Bạn là trợ lý chăm sóc khách hàng thân thiện, lịch sự và chuyên nghiệp.",
     "greeting": "Xin chào! Mình có thể giúp gì cho bạn?",
     "fallback": "Xin lỗi, mình chưa có thông tin này. Bạn vui lòng để lại số điện thoại, nhân viên sẽ liên hệ hỗ trợ sớm nhất.",
+    "tokens": 5000, # Số lượng token mặc định ban đầu
+    "active": True,
 }
 
 class DomainError(Exception):
@@ -201,3 +203,32 @@ def search(name: str, qvec: list[float], k: int, min_score: float) -> list[dict]
             
     results.sort(key=lambda x: x["score"], reverse=True)
     return results[:k]
+
+def deduct_tokens(name: str, amount: int) -> bool:
+    try:
+        db().collection("domains").document(name).set({
+            "config": {
+                "tokens": firestore.Increment(-amount)
+            }
+        }, merge=True)
+        return True
+    except Exception:
+        return False
+
+def add_tokens(name: str, amount: int) -> int:
+    try:
+        db().collection("domains").document(name).set({
+            "config": {
+                "tokens": firestore.Increment(amount),
+                "active": True
+            }
+        }, merge=True)
+        cfg = get_config(name)
+        return cfg.get("tokens", 0)
+    except Exception:
+        return 0
+
+def get_main_knowledge(name: str) -> str:
+    chunks, _ = _get_cache(name)
+    main_texts = [c["text"] for c in chunks if c["source"] == "main-knowledge"]
+    return "\n\n".join(main_texts)

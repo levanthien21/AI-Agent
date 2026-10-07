@@ -121,6 +121,31 @@ def add_text(name: str, body: TextIn):
 def delete_source(name: str, source: str):
     return {"removed": store.delete_source(name, source)}
 
+class TokenIn(BaseModel):
+    amount: int
+
+@app.post("/api/domains/{name}/tokens", dependencies=[Depends(admin)])
+def add_tokens(name: str, body: TokenIn):
+    new_balance = store.add_tokens(name, body.amount)
+    return {"tokens": new_balance}
+
+@app.get("/api/domains/{name}/knowledge", dependencies=[Depends(admin)])
+def get_main_knowledge(name: str):
+    return {"text": store.get_main_knowledge(name)}
+
+class KnowledgeIn(BaseModel):
+    text: str
+
+@app.put("/api/domains/{name}/knowledge", dependencies=[Depends(admin)])
+def set_main_knowledge(name: str, body: KnowledgeIn):
+    # First delete existing main knowledge
+    store.delete_source(name, "main-knowledge")
+    # Add new if not empty
+    chunks = 0
+    if body.text.strip():
+        chunks = ingest.ingest_text(name, "main-knowledge", body.text)
+    return {"chunks": chunks, "ok": True}
+
 
 # ---------- Giao diện ----------
 @app.get("/")
