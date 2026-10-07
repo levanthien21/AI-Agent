@@ -32,7 +32,11 @@ def reply(domain: str, session_id: str, message: str) -> dict:
         prev_user = next((h["text"] for h in reversed(history) if h["role"] == "user"), "")
         query = f"{prev_user}\n{message}"
 
-    hits = store.search(domain, llm.embed_query(query), config.TOP_K, config.MIN_SCORE)
+            try:
+            hits = store.search(domain, llm.embed_query(query), config.TOP_K, config.MIN_SCORE)
+        except Exception as e:
+            print("Embedding failed, skipping RAG:", e)
+            hits = []
     knowledge = "\n".join(f"- {h['text']}" for h in hits) or "(không có thông tin liên quan)"
     prompt = f"KIẾN THỨC:\n{knowledge}\n\nTIN NHẮN CỦA KHÁCH:\n{message}"
 
@@ -83,7 +87,11 @@ def reply_stream(domain: str, session_id: str, message: str):
             prev_user = next((h["text"] for h in reversed(history) if h["role"] == "user"), "")
             query = f"{prev_user}\n{message}"
 
-        hits = store.search(domain, llm.embed_query(query), config.TOP_K, config.MIN_SCORE)
+                try:
+            hits = store.search(domain, llm.embed_query(query), config.TOP_K, config.MIN_SCORE)
+        except Exception as e:
+            print("Embedding failed, skipping RAG:", e)
+            hits = []
         knowledge = "\n".join(f"- {h['text']}" for h in hits) or "(không có thông tin liên quan)"
         prompt = f"KIẾN THỨC:\n{knowledge}\n\nTIN NHẮN CỦA KHÁCH:\n{message}"
 
