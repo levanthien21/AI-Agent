@@ -96,8 +96,26 @@
     fetch(server + "/api/chat", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ domain: domain, session_id: sid, message: text })
-    }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.detail); return j; }); })
-      .then(function (j) { typing.textContent = j.answer; msgs.scrollTop = msgs.scrollHeight; if (spoken) speak(j.answer); })
-      .catch(function (err) { typing.textContent = err.message || "Lỗi kết nối, vui lòng thử lại."; });
+    }).then(async function (r) {
+      if (!r.ok) {
+         var j = await r.json().catch(function(){return {};});
+         throw new Error(j.detail || "L?i k?t n?i");
+      }
+      typing.textContent = "";
+      var reader = r.body.getReader();
+      var decoder = new TextDecoder("utf-8");
+      return (function readStream() {
+        return reader.read().then(function (result) {
+          if (result.done) {
+             if (spoken) speak(typing.textContent);
+             return;
+          }
+          typing.textContent += decoder.decode(result.value, { stream: true });
+          msgs.scrollTop = msgs.scrollHeight;
+          return readStream();
+        });
+      })();
+    }).catch(function (err) { typing.textContent = err.message || "L?i k?t n?i, vui l�ng th? l?i."; });
   };
 })();
+

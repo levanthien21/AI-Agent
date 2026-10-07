@@ -48,31 +48,26 @@ def embed(texts: list[str], task_type: str = "RETRIEVAL_DOCUMENT") -> list[list[
 def embed_query(text: str) -> list[float]:
     return embed([text], task_type="RETRIEVAL_QUERY")[0]
 
-def generate(system: str, history: list[dict], user_message: str, max_tokens: int = 150) -> str:
-    """history: [{'role': 'user'|'model', 'text': str}, ...]"""
-    contents = [
-        types.Content(role=h["role"], parts=[types.Part(text=h["text"])]) for h in history
-    ]
+def generate_stream(system: str, history: list[dict], user_message: str, max_tokens: int = 150):
+    contents = [types.Content(role=h["role"], parts=[types.Part(text=h["text"])]) for h in history]
     contents.append(types.Content(role="user", parts=[types.Part(text=user_message)]))
-    
     last_err = None
     for model in config.CHAT_MODELS:
         try:
-            res = client().models.generate_content(
-                model=model,
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    system_instruction=system, 
-                    temperature=0.3,
-                    max_output_tokens=max_tokens
-                ),
-            )
-            return (res.text or "").strip()
+            res = client().models.generate_content_stream(model=model, contents=contents, config=types.GenerateContentConfig(system_instruction=system, temperature=0.3, max_output_tokens=max_tokens))
+            for chunk in res:
+                if chunk.text:
+                    yield chunk.text
+            return
         except Exception as e:
             last_err = e
             msg = str(e)
-            # Model quá tải / hết quota / không tồn tại -> thử model kế tiếp
             if any(c in msg for c in ("503", "429", "404", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "NOT_FOUND")):
                 continue
             raise
     raise last_err
+
+def generate(system: str, history: list[dict], user_message: str, max_tokens: int = 150) -> str:
+    return "".join(generate_stream(system, history, user_message, max_tokens)).strip()
+
+

@@ -67,3 +67,40 @@ def reply(domain: str, session_id: str, message: str) -> dict:
 
 def reset(domain: str, session_id: str) -> None:
     _sessions.pop((domain, session_id), None)
+
+def reply_stream(domain: str, session_id: str, message: str):
+    cfg = store.get_config(domain)
+    tokens_left = cfg.get("tokens", 0)
+    if tokens_left <= 0:
+        yield "Hệ thống AI đang tạm ngưng do hết hạn mức (tokens). Vui lòng liên hệ quản trị viên để nạp thêm."
+        return
+
+    history = _sessions[(domain, session_id)]
+    query = message
+    if len(message) < 25 and history:
+        prev_user = next((h["text"] for h in reversed(history) if h["role"] == "user"), "")
+        query = f"{prev_user}\n{message}"
+
+    hits = store.search(domain, llm.embed_query(query), config.TOP_K, config.MIN_SCORE)
+    knowledge = "\n".join(f"- {h['text']}" for h in hits) or "(không có thông tin liên quan)"
+    prompt = f"KIẾN THỨC:\n{knowledge}\n\nTIN NHẮN CỦA KHÁCH:\n{message}"
+
+    max_tok = cfg.get("max_tokens", 150)
+    
+    full_answer = ""
+    try:
+        for chunk in llm.generate_stream(_system_prompt(cfg), history[-config.HISTORY_TURNS * 2 :], prompt, max_tok):
+            full_answer += chunk
+            yield chunk
+    except Exception as e:
+        if not full_answer:
+            yield cfg["fallback"]
+            full_answer = cfg["fallback"]
+        else:
+            yield "\n[Lỗi kết nối bị ngắt]"
+
+    cost = len(message) + len(full_answer)
+    store.deduct_tokens(domain, cost)
+
+    history += [{"role": "user", "text": message}, {"role": "model", "text": full_answer}]
+    del history[: -config.HISTORY_TURNS * 2]

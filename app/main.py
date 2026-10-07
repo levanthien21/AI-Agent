@@ -43,7 +43,9 @@ class ChatIn(BaseModel):
 @app.post("/api/chat")
 def chat(body: ChatIn):
     try:
-        return agent.reply(body.domain, body.session_id, body.message)
+        from fastapi.responses import StreamingResponse
+        # Streaming response directly yields text chunks
+        return StreamingResponse(agent.reply_stream(body.domain, body.session_id, body.message), media_type="text/plain")
     except store.DomainError:
         raise
     except Exception:
