@@ -48,7 +48,7 @@ def embed(texts: list[str], task_type: str = "RETRIEVAL_DOCUMENT") -> list[list[
 def embed_query(text: str) -> list[float]:
     return embed([text], task_type="RETRIEVAL_QUERY")[0]
 
-def generate(system: str, history: list[dict], user_message: str) -> str:
+def generate(system: str, history: list[dict], user_message: str, max_tokens: int = 150) -> str:
     """history: [{'role': 'user'|'model', 'text': str}, ...]"""
     contents = [
         types.Content(role=h["role"], parts=[types.Part(text=h["text"])]) for h in history
@@ -61,7 +61,11 @@ def generate(system: str, history: list[dict], user_message: str) -> str:
             res = client().models.generate_content(
                 model=model,
                 contents=contents,
-                config=types.GenerateContentConfig(system_instruction=system, temperature=0.3),
+                config=types.GenerateContentConfig(
+                    system_instruction=system, 
+                    temperature=0.3,
+                    max_output_tokens=max_tokens
+                ),
             )
             return (res.text or "").strip()
         except Exception as e:

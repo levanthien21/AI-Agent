@@ -19,6 +19,8 @@ DEFAULT_CONFIG = {
     "fallback": "Xin lỗi, mình chưa có thông tin này. Bạn vui lòng để lại số điện thoại, nhân viên sẽ liên hệ hỗ trợ sớm nhất.",
     "tokens": 5000, # Số lượng token mặc định ban đầu
     "active": True,
+    "timeout": 15, # Giây chờ tối đa
+    "max_tokens": 150, # Số lượng token tối đa (càng ít càng nhanh)
 }
 
 class DomainError(Exception):

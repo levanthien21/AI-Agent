@@ -36,8 +36,24 @@ def reply(domain: str, session_id: str, message: str) -> dict:
     knowledge = "\n".join(f"- {h['text']}" for h in hits) or "(không có thông tin liên quan)"
     prompt = f"KIẾN THỨC:\n{knowledge}\n\nTIN NHẮN CỦA KHÁCH:\n{message}"
 
-    answer = llm.generate(_system_prompt(cfg), history[-config.HISTORY_TURNS * 2 :], prompt) or cfg["fallback"]
+    max_tok = cfg.get("max_tokens", 150)
+    timeout_sec = cfg.get("timeout", 15)
     
+    try:
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            # LLM trả lời với độ dài bị giới hạn để tăng tốc
+            future = executor.submit(llm.generate, _system_prompt(cfg), history[-config.HISTORY_TURNS * 2 :], prompt, max_tok)
+            answer = future.result(timeout=timeout_sec)
+        
+        if not answer:
+            answer = cfg["fallback"]
+    except concurrent.futures.TimeoutError:
+        answer = cfg["fallback"]
+    except Exception as e:
+        # Xử lý khi LLM lỗi
+        answer = cfg["fallback"]
+        
     # Trừ tokens (1 ký tự = ~0.25 token, nhưng để đơn giản ta tính 1 token = 1 ký tự text + answer)
     # hoặc cứ gọi token là đơn vị ký tự cho dễ kinh doanh
     cost = len(message) + len(answer)

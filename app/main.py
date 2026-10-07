@@ -64,6 +64,8 @@ class DomainIn(BaseModel):
     persona: str | None = None
     greeting: str | None = None
     fallback: str | None = None
+    timeout: int | None = None
+    max_tokens: int | None = None
 
 
 class DomainUpdate(BaseModel):
@@ -71,6 +73,8 @@ class DomainUpdate(BaseModel):
     persona: str | None = None
     greeting: str | None = None
     fallback: str | None = None
+    timeout: int | None = None
+    max_tokens: int | None = None
 
 
 class TextIn(BaseModel):
