@@ -70,6 +70,19 @@ def chat_stream(body: ChatIn):
         log.exception("chat failed")
         raise HTTPException(500, "Hệ thống đang bận, vui lòng thử lại sau ít phút.")
 
+@app.get("/api/debug_ai")
+def debug_ai():
+    try:
+        # Test Gemini
+        vec = llm.embed_query("test")
+        out = ""
+        for c in llm.generate_stream("system", [], "hello", 50):
+            out += c
+        return {"ok": True, "vec_len": len(vec), "out": out}
+    except Exception as e:
+        import traceback
+        return {"ok": False, "error": str(e), "trace": traceback.format_exc()}
+
 
 @app.get("/api/domains/{name}/public")
 def public_info(name: str):
