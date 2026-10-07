@@ -1,23 +1,33 @@
-﻿"""Bọc Gemini API: tạo embedding và sinh câu trả lời."""
+"""B?c Gemini API cho embedding v DeepSeek API sinh cu tr? l?i."""
 import math
 import time
 from google import genai
 from google.genai import types
+from openai import OpenAI
 
 from . import config
 
 _client = None
+_ds_client = None
 
 def client() -> genai.Client:
     global _client
     if _client is None:
         if not config.GEMINI_API_KEY:
-            raise RuntimeError("Chưa cấu hình GEMINI_API_KEY trong file .env")
+            raise RuntimeError("Chua c?u hnh GEMINI_API_KEY trong file .env")
         _client = genai.Client(api_key=config.GEMINI_API_KEY, http_options={"timeout": 8.0})
     return _client
 
+def ds_client() -> OpenAI:
+    global _ds_client
+    if _ds_client is None:
+        if not config.DEEPSEEK_API_KEY:
+            raise RuntimeError("Chua c?u hnh DEEPSEEK_API_KEY trong file .env")
+        _ds_client = OpenAI(api_key=config.DEEPSEEK_API_KEY, base_url="https://api.deepseek.com", timeout=8.0)
+    return _ds_client
+
 def embed(texts: list[str], task_type: str = "RETRIEVAL_DOCUMENT") -> list[list[float]]:
-    """Trả về mảng 2 chiều các vector đã chuẩn hoá để dùng cosine = tích vô hướng."""
+    """Tr? v? m?ng 2 chi?u cc vector da chu?n ho d? dng cosine = tch v hu?ng."""
     out = []
     for i in range(0, len(texts), 100):
         batch = texts[i : i + 100]
@@ -49,26 +59,33 @@ def embed_query(text: str) -> list[float]:
     return embed([text], task_type="RETRIEVAL_QUERY")[0]
 
 def generate_stream(system: str, history: list[dict], user_message: str, max_tokens: int = 150):
-    contents = [types.Content(role=h["role"], parts=[types.Part(text=h["text"])]) for h in history]
-    contents.append(types.Content(role="user", parts=[types.Part(text=user_message)]))
+    messages = [{"role": "system", "content": system}]
+    for h in history:
+        messages.append({"role": "assistant" if h["role"] == "model" else "user", "content": h["text"]})
+    messages.append({"role": "user", "content": user_message})
+    
     last_err = None
     for model in config.CHAT_MODELS:
         try:
-            res = client().models.generate_content_stream(model=model, contents=contents, config=types.GenerateContentConfig(system_instruction=system, temperature=0.3, max_output_tokens=max_tokens))
+            res = ds_client().chat.completions.create(
+                model=model,
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=0.3,
+                stream=True
+            )
             for chunk in res:
-                if chunk.text:
-                    yield chunk.text
+                content = chunk.choices[0].delta.content
+                if content:
+                    yield content
             return
         except Exception as e:
             last_err = e
             msg = str(e)
-            if any(c in msg for c in ("503", "429", "404", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "NOT_FOUND")):
+            if any(c in msg for c in ("503", "429", "404", "Rate limit", "timeout")):
                 continue
             raise
     raise last_err
 
 def generate(system: str, history: list[dict], user_message: str, max_tokens: int = 150) -> str:
     return "".join(generate_stream(system, history, user_message, max_tokens)).strip()
-
-
-
