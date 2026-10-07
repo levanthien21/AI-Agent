@@ -76,31 +76,31 @@ def reply_stream(domain: str, session_id: str, message: str):
         return
 
     history = _sessions[(domain, session_id)]
-    query = message
-    if len(message) < 25 and history:
-        prev_user = next((h["text"] for h in reversed(history) if h["role"] == "user"), "")
-        query = f"{prev_user}\n{message}"
-
-    hits = store.search(domain, llm.embed_query(query), config.TOP_K, config.MIN_SCORE)
-    knowledge = "\n".join(f"- {h['text']}" for h in hits) or "(không có thông tin liên quan)"
-    prompt = f"KIẾN THỨC:\n{knowledge}\n\nTIN NHẮN CỦA KHÁCH:\n{message}"
-
-    max_tok = cfg.get("max_tokens", 150)
-    
     full_answer = ""
     try:
+        query = message
+        if len(message) < 25 and history:
+            prev_user = next((h["text"] for h in reversed(history) if h["role"] == "user"), "")
+            query = f"{prev_user}\n{message}"
+
+        hits = store.search(domain, llm.embed_query(query), config.TOP_K, config.MIN_SCORE)
+        knowledge = "\n".join(f"- {h['text']}" for h in hits) or "(không có thông tin liên quan)"
+        prompt = f"KIẾN THỨC:\n{knowledge}\n\nTIN NHẮN CỦA KHÁCH:\n{message}"
+
+        max_tok = cfg.get("max_tokens", 150)
+        
         for chunk in llm.generate_stream(_system_prompt(cfg), history[-config.HISTORY_TURNS * 2 :], prompt, max_tok):
             full_answer += chunk
             yield chunk
     except Exception as e:
         if not full_answer:
-            yield cfg["fallback"]
-            full_answer = cfg["fallback"]
+            yield cfg.get("fallback", "Hệ thống đang bận, vui lòng thử lại sau ít phút.")
+            full_answer = cfg.get("fallback", "Hệ thống đang bận.")
         else:
             yield "\n[Lỗi kết nối bị ngắt]"
 
-    cost = len(message) + len(full_answer)
-    store.deduct_tokens(domain, cost)
-
-    history += [{"role": "user", "text": message}, {"role": "model", "text": full_answer}]
-    del history[: -config.HISTORY_TURNS * 2]
+    if full_answer:
+        cost = len(message) + len(full_answer)
+        store.deduct_tokens(domain, cost)
+        history += [{"role": "user", "text": message}, {"role": "model", "text": full_answer}]
+        del history[: -config.HISTORY_TURNS * 2]
