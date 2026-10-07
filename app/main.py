@@ -73,7 +73,7 @@ def chat_stream(body: ChatIn):
 @app.get("/api/debug_ai")
 def debug_ai():
     try:
-        # Test Gemini
+        from app import llm
         vec = llm.embed_query("test")
         out = ""
         for c in llm.generate_stream("system", [], "hello", 50):
