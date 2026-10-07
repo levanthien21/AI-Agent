@@ -44,8 +44,17 @@ class ChatIn(BaseModel):
 def chat(body: ChatIn):
     try:
         from fastapi.responses import StreamingResponse
-        # Streaming response directly yields text chunks
-        return StreamingResponse(agent.reply_stream(body.domain, body.session_id, body.message), media_type="text/plain")
+        # Dùng StreamingResponse và thêm headers chống buffer của Vercel/Nginx
+        headers = {
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive"
+        }
+        return StreamingResponse(
+            agent.reply_stream(body.domain, body.session_id, body.message), 
+            media_type="text/plain",
+            headers=headers
+        )
     except store.DomainError:
         raise
     except Exception:
