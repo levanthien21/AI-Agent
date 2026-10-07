@@ -1,4 +1,4 @@
-﻿"""Lõi agent: truy xuất kiến thức theo lĩnh vực rồi sinh câu trả lời."""
+"""Loi agent: truy xu?t ki?n th?c theo linh v?c r?i sinh cu tr? l?i."""
 from collections import defaultdict
 
 from . import config, llm, store
@@ -6,12 +6,12 @@ from . import config, llm, store
 _sessions: dict[tuple[str, str], list[dict]] = defaultdict(list)
 
 RULES = """
-QUY TẮC BẮT BUỘC VÀ SÁNG TẠO:
-1. Ưu tiên sử dụng phần "KIẾN THỨC" được cung cấp để trả lời các câu hỏi về thông tin riêng, quy định, hoặc dữ liệu của tổ chức.
-2. NẾU "KIẾN THỨC" KHÔNG CÓ CÂU TRẢ LỜI, hoặc khách hỏi các kiến thức phổ thông, trò chuyện ngoài lề, bạn HÃY SÁNG TẠO và sử dụng vốn hiểu biết chung của mình để trả lời thật thông minh, nhiệt tình và phù hợp với vai trò của mình.
-3. Luôn nhập vai xuất sắc, giọng văn tự nhiên, thân thiện như một người thật đang trò chuyện.
-4. KHÔNG BAO GIỜ nói câu: "{fallback}" trừ khi hệ thống của bạn bị lỗi không thể lấy được thông tin.
-5. Tuyệt đối không nhắc đến việc bạn là AI hay bạn đang đọc từ "tài liệu", "kiến thức được cung cấp". Không dùng các cụm từ như "Dựa trên thông tin được cung cấp...".
+QUY T?C B?T BU?C VA SANG T?O:
+1. Uu tin s? d?ng ph?n "KI?N TH?C" du?c cung c?p d? tr? l?i cc cu h?i v? thng tin ring, quy d?nh, ho?c d? li?u c?a t? ch?c.
+2. N?U "KI?N TH?C" KHONG CO CAU TR? L?I, ho?c khch h?i cc ki?n th?c ph? thng, tr chuy?n ngoi l?, b?n HAY SANG T?O v s? d?ng v?n hi?u bi?t chung c?a mnh d? tr? l?i th?t thng minh, nhi?t tnh v ph h?p v?i vai tr c?a mnh.
+3. Lun nh?p vai xu?t s?c, gi?ng van t? nhin, thn thi?n nhu m?t ngu?i th?t dang tr chuy?n.
+4. KHONG BAO GI? ni cu: "{fallback}" tr? khi h? th?ng c?a b?n b? l?i khng th? l?y du?c thng tin.
+5. Tuy?t d?i khng nh?c d?n vi?c b?n l AI hay b?n dang d?c t? "ti li?u", "ki?n th?c du?c cung c?p". Khng dng cc c?m t? nhu "D?a trn thng tin du?c cung c?p...".
 """
 
 
@@ -23,7 +23,7 @@ def reply(domain: str, session_id: str, message: str) -> dict:
     cfg = store.get_config(domain)
     tokens_left = cfg.get("tokens", 0)
     if tokens_left <= 0:
-        return {"answer": "Hệ thống AI đang tạm ngưng do hết hạn mức (tokens). Vui lòng liên hệ quản trị viên để nạp thêm.", "sources": []}
+        return {"answer": "H? th?ng AI dang t?m ngung do h?t h?n m?c (tokens). Vui lng lin h? qu?n tr? vin d? n?p thm.", "sources": []}
 
     history = _sessions[(domain, session_id)]
 
@@ -32,13 +32,14 @@ def reply(domain: str, session_id: str, message: str) -> dict:
         prev_user = next((h["text"] for h in reversed(history) if h["role"] == "user"), "")
         query = f"{prev_user}\n{message}"
 
-            try:
-            hits = store.search(domain, llm.embed_query(query), config.TOP_K, config.MIN_SCORE)
-        except Exception as e:
-            print("Embedding failed, skipping RAG:", e)
-            hits = []
-    knowledge = "\n".join(f"- {h['text']}" for h in hits) or "(không có thông tin liên quan)"
-    prompt = f"KIẾN THỨC:\n{knowledge}\n\nTIN NHẮN CỦA KHÁCH:\n{message}"
+    try:
+        hits = store.search(domain, llm.embed_query(query), config.TOP_K, config.MIN_SCORE)
+    except Exception as e:
+        print("Embedding failed, skipping RAG:", e)
+        hits = []
+
+    knowledge = "\n".join(f"- {h['text']}" for h in hits) or "(khng c thng tin lin quan)"
+    prompt = f"KI?N TH?C:\n{knowledge}\n\nTIN NH?N C?A KHACH:\n{message}"
 
     max_tok = cfg.get("max_tokens", 150)
     timeout_sec = cfg.get("timeout", 15)
@@ -46,7 +47,7 @@ def reply(domain: str, session_id: str, message: str) -> dict:
     try:
         import concurrent.futures
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            # LLM trả lời với độ dài bị giới hạn để tăng tốc
+            # LLM tr? l?i v?i d? di b? gi?i h?n d? tang t?c
             future = executor.submit(llm.generate, _system_prompt(cfg), history[-config.HISTORY_TURNS * 2 :], prompt, max_tok)
             answer = future.result(timeout=timeout_sec)
         
@@ -55,15 +56,15 @@ def reply(domain: str, session_id: str, message: str) -> dict:
     except concurrent.futures.TimeoutError:
         answer = cfg["fallback"]
     except Exception as e:
-        # Xử lý khi LLM lỗi
+        # X? ly khi LLM l?i
         answer = cfg["fallback"]
         
-    # Trừ tokens (1 ký tự = ~0.25 token, nhưng để đơn giản ta tính 1 token = 1 ký tự text + answer)
-    # hoặc cứ gọi token là đơn vị ký tự cho dễ kinh doanh
+    # Tr? tokens (1 ky t? = ~0.25 token, nhung d? don gi?n ta tnh 1 token = 1 ky t? text + answer)
+    # ho?c c? g?i token l don v? ky t? cho d? kinh doanh
     cost = len(message) + len(answer)
     store.deduct_tokens(domain, cost)
 
-    # Lưu lịch sử với tin nhắn gốc (không kèm kiến thức) để prompt gọn
+    # Luu l?ch s? v?i tin nh?n g?c (khng km ki?n th?c) d? prompt g?n
     history += [{"role": "user", "text": message}, {"role": "model", "text": answer}]
     del history[: -config.HISTORY_TURNS * 2]
     return {"answer": answer, "sources": sorted({h["source"] for h in hits})}
@@ -76,7 +77,7 @@ def reply_stream(domain: str, session_id: str, message: str):
     cfg = store.get_config(domain)
     tokens_left = cfg.get("tokens", 0)
     if tokens_left <= 0:
-        yield "Hệ thống AI đang tạm ngưng do hết hạn mức (tokens). Vui lòng liên hệ quản trị viên để nạp thêm."
+        yield "H? th?ng AI dang t?m ngung do h?t h?n m?c (tokens). Vui lng lin h? qu?n tr? vin d? n?p thm."
         return
 
     history = _sessions[(domain, session_id)]
@@ -87,13 +88,14 @@ def reply_stream(domain: str, session_id: str, message: str):
             prev_user = next((h["text"] for h in reversed(history) if h["role"] == "user"), "")
             query = f"{prev_user}\n{message}"
 
-                try:
+        try:
             hits = store.search(domain, llm.embed_query(query), config.TOP_K, config.MIN_SCORE)
         except Exception as e:
             print("Embedding failed, skipping RAG:", e)
             hits = []
-        knowledge = "\n".join(f"- {h['text']}" for h in hits) or "(không có thông tin liên quan)"
-        prompt = f"KIẾN THỨC:\n{knowledge}\n\nTIN NHẮN CỦA KHÁCH:\n{message}"
+
+        knowledge = "\n".join(f"- {h['text']}" for h in hits) or "(khng c thng tin lin quan)"
+        prompt = f"KI?N TH?C:\n{knowledge}\n\nTIN NH?N C?A KHACH:\n{message}"
 
         max_tok = cfg.get("max_tokens", 150)
         
@@ -102,14 +104,13 @@ def reply_stream(domain: str, session_id: str, message: str):
             yield chunk
     except Exception as e:
         if not full_answer:
-            yield (cfg.get("fallback") or "Hệ thống đang bận, vui lòng thử lại sau ít phút.")
-            full_answer = (cfg.get("fallback") or "Hệ thống đang bận.")
+            yield (cfg.get("fallback") or "H? th?ng dang b?n, vui lng th? l?i sau t pht.")
+            full_answer = (cfg.get("fallback") or "H? th?ng dang b?n.")
         else:
-            yield "\n[Lỗi kết nối bị ngắt]"
+            yield "\n[L?i k?t n?i b? ng?t]"
 
     if full_answer:
         cost = len(message) + len(full_answer)
         store.deduct_tokens(domain, cost)
         history += [{"role": "user", "text": message}, {"role": "model", "text": full_answer}]
         del history[: -config.HISTORY_TURNS * 2]
-
