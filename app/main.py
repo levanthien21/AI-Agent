@@ -215,3 +215,62 @@ def admin_page():
 @app.get("/demo")
 def demo_page():
     return FileResponse(STATIC / "demo.html")
+import urllib.request
+import json
+import os
+from fastapi import BackgroundTasks
+
+FB_VERIFY_TOKEN = os.getenv("FB_VERIFY_TOKEN", "123456789")
+FB_PAGE_ACCESS_TOKEN = os.getenv("FB_PAGE_ACCESS_TOKEN", "")
+
+def send_fb_message(sender_id: str, text: str):
+    if not FB_PAGE_ACCESS_TOKEN:
+        print("Thi?u FB_PAGE_ACCESS_TOKEN")
+        return
+    url = f"https://graph.facebook.com/v19.0/me/messages?access_token={FB_PAGE_ACCESS_TOKEN}"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "recipient": {"id": sender_id},
+        "message": {"text": text}
+    }
+    req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers=headers, method='POST')
+    try:
+        with urllib.request.urlopen(req) as response:
+            pass
+    except Exception as e:
+        print(f"L?i g?i tin nh?n FB: {e}")
+
+def process_fb_message(domain: str, sender_id: str, message: str):
+    try:
+        # Gi? s? t?o ri?ng 1 domain cho m?i page, n?u c FB_PAGE_ID c th? phn lu?ng
+        # T?m th?i ch? dng domain m?c d?nh l "test" ho?c "demo". Ta s? l?y l "test" d? c ki?n th?c
+        domain = "test" 
+        res = agent.reply(domain, sender_id, message)
+        answer = res.get("answer", "Xin l?i, h? th?ng dang b?n.")
+        send_fb_message(sender_id, answer)
+    except Exception as e:
+        print("L?i x? ly FB message:", e)
+
+@app.get("/api/webhook/facebook/{domain}")
+def fb_webhook_verify(domain: str, request: Request):
+    mode = request.query_params.get("hub.mode")
+    token = request.query_params.get("hub.verify_token")
+    challenge = request.query_params.get("hub.challenge")
+    
+    if mode == "subscribe" and token == FB_VERIFY_TOKEN:
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(content=challenge)
+    raise HTTPException(status_code=403, detail="Invalid verification token")
+
+@app.post("/api/webhook/facebook/{domain}")
+async def fb_webhook_receive(domain: str, request: Request, background_tasks: BackgroundTasks):
+    body = await request.json()
+    if body.get("object") == "page":
+        for entry in body.get("entry", []):
+            for event in entry.get("messaging", []):
+                sender_id = event.get("sender", {}).get("id")
+                message = event.get("message", {}).get("text")
+                if sender_id and message:
+                    background_tasks.add_task(process_fb_message, domain, sender_id, message)
+        return "EVENT_RECEIVED"
+    raise HTTPException(status_code=404)
