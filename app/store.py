@@ -82,9 +82,10 @@ def _get_cache(name: str):
 def exists(name: str) -> bool:
     return db().collection("domains").document(name).get().exists
 
-def list_domains() -> list[dict]:
+def list_domains(owner_uid: str = None) -> list[dict]:
     domains = []
-    for doc in db().collection("domains").stream():
+    query = db().collection("domains").where("owner_uid", "==", owner_uid).stream() if owner_uid else db().collection("domains").stream()
+    for doc in query:
         d = doc.to_dict()
         name = doc.id
         
@@ -101,13 +102,13 @@ def list_domains() -> list[dict]:
         })
     return domains
 
-def create_domain(name: str, **cfg) -> dict:
+def create_domain(name: str, owner_uid: str = None, **cfg) -> dict:
     if exists(name):
         raise DomainError("Lĩnh vực đã tồn tại")
     
     config_data = dict(DEFAULT_CONFIG)
     config_data.update({k: v for k, v in cfg.items() if v is not None and k in DEFAULT_CONFIG})
-    db().collection("domains").document(name).set({"config": config_data})
+    db().collection("domains").document(name).set({"config": config_data, "owner_uid": owner_uid})
     return config_data
 
 def delete_domain(name: str) -> None:

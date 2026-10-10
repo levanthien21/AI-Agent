@@ -119,7 +119,7 @@ class TextIn(BaseModel):
 
 @app.get("/api/domains", dependencies=[Depends(admin)])
 def domains():
-    return store.list_domains()
+    return store.list_domains(uid)
 
 
 @app.post("/api/domains", dependencies=[Depends(admin)])
@@ -318,7 +318,7 @@ def debug_all():
 
 
 @app.get("/api/domains/{domain}/history")
-def get_history(domain: str, limit: int = 50, _=Depends(admin)):
+def get_history(domain: str, limit: int = 50, uid: str = Depends(verify_token)):
     try:
         return store.get_chat_history(domain, limit)
     except Exception as e:
