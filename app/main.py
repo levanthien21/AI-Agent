@@ -176,6 +176,15 @@ def add_text(name: str, body: TextIn, uid: str = Depends(admin)):
     return {"chunks": ingest.ingest_text(name, body.source, body.text)}
 
 
+
+@app.get("/api/domains/{name}/sources/{source:path}/content")
+def get_source_content(name: str, source: str, uid: str = Depends(admin)):
+    try:
+        content = store.get_source_content(name, source)
+        return {"content": content}
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
 @app.delete("/api/domains/{name}/sources/{source:path}")
 def delete_source(name: str, source: str, uid: str = Depends(admin)):
     return {"removed": store.delete_source(name, source)}

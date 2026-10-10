@@ -518,6 +518,26 @@
                 </div>
             </div>
             
+            
+            <!-- View Content Modal -->
+            <div id="view_content_modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center transition-opacity p-4">
+                <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] border border-slate-100 flex flex-col">
+                    <div class="flex justify-between items-center p-6 border-b border-slate-100 shrink-0">
+                        <h2 class="text-xl font-bold text-slate-900 truncate pr-4" id="view_content_title">Nội dung chi tiết</h2>
+                        <button onclick="document.getElementById('view_content_modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 shrink-0">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-6 bg-slate-50 rounded-b-3xl">
+                        <div id="view_content_loading" class="text-center py-10 text-slate-500 hidden">
+                            <div class="w-8 h-8 border-4 border-slate-200 border-t-indigo-500 rounded-full animate-spin mx-auto mb-3"></div>
+                            Đang tải dữ liệu...
+                        </div>
+                        <div id="view_content_text" class="whitespace-pre-wrap text-sm text-slate-700 font-mono leading-relaxed bg-white p-6 rounded-xl border border-slate-200 shadow-sm min-h-[200px]"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Connect Modal -->
             <div id="connect_modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center transition-opacity">
                 <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100 transform transition-transform">
@@ -1079,9 +1099,14 @@
                             <div class="text-xs font-medium text-slate-500">${chunks > 0 ? chunks + ' đoạn kiến thức' : 'Đã tải lên'}</div>
                         </div>
                     </div>
-                    <button onclick="deleteFile('${sourceName}')" class="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors shrink-0" title="Xóa">
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button onclick="viewFileContent('${sourceName}')" class="text-indigo-500 hover:text-indigo-700 p-2 hover:bg-indigo-50 rounded-lg transition-colors" title="Xem nội dung">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        </button>
+                        <button onclick="deleteFile('${sourceName}')" class="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors" title="Xóa">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
+                    </div>
                 `;
                 list.appendChild(li);
             });
@@ -1151,6 +1176,23 @@
             } catch (e) {
                 alert("Lỗi upload: " + e.message);
                 loadKnowledge();
+            }
+        }
+
+        
+        async function viewFileContent(sourceName) {
+            $("view_content_title").textContent = sourceName;
+            $("view_content_text").textContent = "";
+            $("view_content_loading").classList.remove("hidden");
+            $("view_content_modal").classList.remove("hidden");
+            
+            try {
+                const res = await api(`/domains/${curDomain}/sources/${encodeURIComponent(sourceName)}/content`);
+                $("view_content_text").textContent = res.content || "Không có nội dung.";
+            } catch (e) {
+                $("view_content_text").textContent = "Lỗi tải nội dung: " + e.message;
+            } finally {
+                $("view_content_loading").classList.add("hidden");
             }
         }
 

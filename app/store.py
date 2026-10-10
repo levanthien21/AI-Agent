@@ -194,6 +194,12 @@ def list_sources(name: str) -> list[dict]:
         counts[c["source"]] = counts.get(c["source"], 0) + 1
     return [{"source": s, "chunks": n} for s, n in counts.items()]
 
+
+def get_source_content(name: str, source: str) -> str:
+    chunks, _ = _get_cache(name)
+    texts = [c["text"] for c in chunks if c["source"] == source]
+    return "\n\n...\n\n".join(texts)
+
 def get_all_knowledge(name: str) -> str:
     chunks, _ = _get_cache(name)
     texts = [doc["text"] for doc in chunks]
