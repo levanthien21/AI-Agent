@@ -497,6 +497,42 @@ def get_ai_draft(name: str, session_id: str, uid: str = Depends(admin)):
     except Exception as e:
         return {"draft": ""}
 
+
+import re
+
+@app.get("/api/domains/{name}/leads")
+def get_leads(name: str, uid: str = Depends(admin)):
+    leads = []
+    try:
+        docs = store.db().collection("domains").document(name).collection("history").stream()
+        phone_regex = re.compile(r"(0[3|5|7|8|9][0-9]{8})")
+        
+        for doc in docs:
+            data = doc.to_dict()
+            messages = data.get("messages", [])
+            if not messages: continue
+            
+            # Find phone number in any message
+            found_phone = None
+            for msg in messages:
+                content = msg.get("content", "")
+                match = phone_regex.search(content)
+                if match:
+                    found_phone = match.group(1)
+                    break
+            
+            if found_phone:
+                last_msg = messages[-1].get("content", "")
+                leads.append({
+                    "session_id": doc.id,
+                    "phone": found_phone,
+                    "source": data.get("source", "unknown"),
+                    "last_msg": last_msg[:50] + "..." if len(last_msg) > 50 else last_msg
+                })
+        return leads
+    except Exception as e:
+        return []
+
 @app.get("/api/debug/spss_check")
 def debug_spss():
     try:

@@ -65,6 +65,48 @@
                     <p id="auth_err" class="text-red-500 text-sm text-center mt-4 hidden p-3 bg-red-50 rounded-lg border border-red-100"></p>
                 </div>
             </div>
+
+            <!-- VIEW: LEADS -->
+            <div id="view-leads" class="saas-view flex-1 p-8 hidden overflow-y-auto bg-slate-50">
+                <div class="max-w-5xl mx-auto">
+                    <div class="mb-8 flex items-end justify-between">
+                        <div>
+                            <h3 class="text-3xl font-bold text-slate-900 tracking-tight mb-2">CRM - Lead Generation</h3>
+                            <p class="text-slate-500 text-lg">Hệ thống tự động quét lịch sử Chat và trích xuất Số điện thoại khách hàng tiềm năng (SĐT).</p>
+                        </div>
+                        <button onclick="exportLeads()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Xuất File Excel
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-xs uppercase font-bold text-slate-500">
+                                    <tr>
+                                        <th class="px-6 py-4">Số Điện Thoại</th>
+                                        <th class="px-6 py-4">Nền tảng</th>
+                                        <th class="px-6 py-4">Session ID</th>
+                                        <th class="px-6 py-4">Tin nhắn gần nhất</th>
+                                        <th class="px-6 py-4 text-center">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leads_table_body" class="divide-y divide-slate-100">
+                                    <!-- Rendered via JS -->
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-12 text-center text-slate-400">
+                                            <div class="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin mx-auto mb-3"></div>
+                                            Đang quét dữ liệu...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -105,6 +147,48 @@
                     </div>
                 </div>
             </div>
+
+            <!-- VIEW: LEADS -->
+            <div id="view-leads" class="saas-view flex-1 p-8 hidden overflow-y-auto bg-slate-50">
+                <div class="max-w-5xl mx-auto">
+                    <div class="mb-8 flex items-end justify-between">
+                        <div>
+                            <h3 class="text-3xl font-bold text-slate-900 tracking-tight mb-2">CRM - Lead Generation</h3>
+                            <p class="text-slate-500 text-lg">Hệ thống tự động quét lịch sử Chat và trích xuất Số điện thoại khách hàng tiềm năng (SĐT).</p>
+                        </div>
+                        <button onclick="exportLeads()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Xuất File Excel
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-xs uppercase font-bold text-slate-500">
+                                    <tr>
+                                        <th class="px-6 py-4">Số Điện Thoại</th>
+                                        <th class="px-6 py-4">Nền tảng</th>
+                                        <th class="px-6 py-4">Session ID</th>
+                                        <th class="px-6 py-4">Tin nhắn gần nhất</th>
+                                        <th class="px-6 py-4 text-center">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leads_table_body" class="divide-y divide-slate-100">
+                                    <!-- Rendered via JS -->
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-12 text-center text-slate-400">
+                                            <div class="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin mx-auto mb-3"></div>
+                                            Đang quét dữ liệu...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -172,6 +256,10 @@
                 <button onclick="switchView('knowledge')" id="btn-view-knowledge" class="saas-nav px-4 py-3.5 text-sm font-medium text-slate-500 hover:text-slate-800 rounded-t-lg transition-colors flex items-center gap-2">Dữ Liệu Đào Tạo</button>
                 <button onclick="switchView('channels')" id="btn-view-channels" class="saas-nav px-4 py-3.5 text-sm font-medium text-slate-500 hover:text-slate-800 rounded-t-lg transition-colors flex items-center gap-2">Tích Hợp Kênh</button>
                 <button onclick="switchView('settings')" id="btn-view-settings" class="saas-nav px-4 py-3.5 text-sm font-medium text-slate-500 hover:text-slate-800 rounded-t-lg transition-colors flex items-center gap-2">Cấu Hình Chung</button>
+                <button onclick="switchView('leads')" id="btn-view-leads" class="saas-nav px-4 py-3.5 text-sm font-medium text-slate-500 hover:text-slate-800 rounded-t-lg transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    Data Khách Hàng
+                </button>
             </div>
 
             <!-- VIEW: INBOX -->
@@ -404,6 +492,48 @@
                     </div>
                 </div>
             </div>
+
+            <!-- VIEW: LEADS -->
+            <div id="view-leads" class="saas-view flex-1 p-8 hidden overflow-y-auto bg-slate-50">
+                <div class="max-w-5xl mx-auto">
+                    <div class="mb-8 flex items-end justify-between">
+                        <div>
+                            <h3 class="text-3xl font-bold text-slate-900 tracking-tight mb-2">CRM - Lead Generation</h3>
+                            <p class="text-slate-500 text-lg">Hệ thống tự động quét lịch sử Chat và trích xuất Số điện thoại khách hàng tiềm năng (SĐT).</p>
+                        </div>
+                        <button onclick="exportLeads()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Xuất File Excel
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-xs uppercase font-bold text-slate-500">
+                                    <tr>
+                                        <th class="px-6 py-4">Số Điện Thoại</th>
+                                        <th class="px-6 py-4">Nền tảng</th>
+                                        <th class="px-6 py-4">Session ID</th>
+                                        <th class="px-6 py-4">Tin nhắn gần nhất</th>
+                                        <th class="px-6 py-4 text-center">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leads_table_body" class="divide-y divide-slate-100">
+                                    <!-- Rendered via JS -->
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-12 text-center text-slate-400">
+                                            <div class="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin mx-auto mb-3"></div>
+                                            Đang quét dữ liệu...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -973,6 +1103,8 @@
             if (viewId === 'channels') loadChannelsConfig();
             if (viewId === 'settings') loadSettings();
             if (viewId === 'knowledge') loadKnowledge();
+            if (viewId === 'leads') loadLeads();
+            if (viewId === 'leads') loadLeads();
 
 
             const btn = document.getElementById('btn-view-' + viewId);
