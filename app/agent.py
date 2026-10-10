@@ -17,7 +17,7 @@ QUY T?C B?T BU?C VA SANG T?O:
 def _system_prompt(cfg: dict) -> str:
     return cfg["persona"].strip() + "\n" + RULES.format(fallback=cfg["fallback"])
 
-def reply(domain: str, session_id: str, message_data) -> dict:
+def reply(domain: str, session_id: str, message_data, draft_only: bool = False) -> dict:
     t0 = time.time()
     cfg = store.get_config(domain)
     

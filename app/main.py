@@ -487,6 +487,16 @@ def connect_zalo(name: str, body: ChannelToken, uid: str = Depends(admin)):
     store.db().collection("domains").document(name).update({"config": cfg})
     return {"ok": True}
 
+
+@app.get("/api/domains/{name}/sessions/{session_id}/draft")
+def get_ai_draft(name: str, session_id: str, uid: str = Depends(admin)):
+    try:
+        # Prompt LLM to draft a reply
+        res = agent.reply(name, session_id, {"text": "Dựa vào bối cảnh cuộc trò chuyện trên, hãy soạn một tin nhắn tư vấn phù hợp nhất cho tôi (nhân viên) để tôi gửi cho khách hàng. Chỉ trả về nội dung tin nhắn, không kèm giải thích."}, draft_only=True)
+        return {"draft": res.get("answer", "")}
+    except Exception as e:
+        return {"draft": ""}
+
 @app.get("/api/debug/spss_check")
 def debug_spss():
     try:
