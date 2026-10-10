@@ -20,15 +20,20 @@ from firebase_admin import auth
 
 def admin(x_admin_key: str = Header(default=""), authorization: str = Header(default="")):
     uid = None
+    auth_err = None
     if authorization and authorization.startswith("Bearer "): 
         token = authorization.split("Bearer ")[1]
         try:
             decoded = auth.verify_id_token(token)
             return decoded["uid"]
-        except Exception:
-            pass
+        except Exception as e:
+            auth_err = str(e)
+            
     if config.ADMIN_KEY and hmac.compare_digest(x_admin_key, config.ADMIN_KEY):
         return None
+        
+    if auth_err:
+        raise HTTPException(status_code=401, detail=f"Firebase Auth Error: {auth_err}")
     raise HTTPException(status_code=401, detail="Unauthorized")
 @app.exception_handler(Exception)
 async def _global_error(request: Request, exc: Exception):
