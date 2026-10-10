@@ -440,6 +440,53 @@ def widget_chat(domain: str, body: WidgetChat, background_tasks: BackgroundTasks
     except Exception as e:
         return {"answer": f"Lỗi hệ thống: {e}"}
 
+
+class ChannelToken(BaseModel):
+    token: str
+
+@app.post("/api/domains/{name}/channels/telegram")
+def connect_telegram(name: str, body: ChannelToken, request: Request, uid: str = Depends(admin)):
+    token = body.token.strip()
+    if not token:
+        store.get_config(name) # Check if domain exists
+        cfg = store.get_config(name)
+        cfg["telegram_token"] = ""
+        store.db().collection("domains").document(name).update({"config": cfg})
+        return {"ok": True, "msg": "Đã ngắt kết nối"}
+        
+    webhook_url = f"https://{request.url.netloc}/api/webhook/telegram/{name}"
+    # Auto set webhook
+    try:
+        url = f"https://api.telegram.org/bot{token}/setWebhook?url={webhook_url}"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req) as res:
+            data = json.loads(res.read())
+            if not data.get("ok"):
+                raise Exception(data.get("description"))
+    except Exception as e:
+        raise HTTPException(400, f"Token không hợp lệ hoặc lỗi Telegram: {e}")
+        
+    cfg = store.get_config(name)
+    cfg["telegram_token"] = token
+    store.db().collection("domains").document(name).update({"config": cfg})
+    return {"ok": True}
+
+@app.post("/api/domains/{name}/channels/facebook")
+def connect_facebook(name: str, body: ChannelToken, uid: str = Depends(admin)):
+    token = body.token.strip()
+    cfg = store.get_config(name)
+    cfg["fb_page_token"] = token
+    store.db().collection("domains").document(name).update({"config": cfg})
+    return {"ok": True}
+
+@app.post("/api/domains/{name}/channels/zalo")
+def connect_zalo(name: str, body: ChannelToken, uid: str = Depends(admin)):
+    token = body.token.strip()
+    cfg = store.get_config(name)
+    cfg["zalo_oa_token"] = token
+    store.db().collection("domains").document(name).update({"config": cfg})
+    return {"ok": True}
+
 @app.get("/api/debug/spss_check")
 def debug_spss():
     try:

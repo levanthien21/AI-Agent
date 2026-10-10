@@ -260,69 +260,108 @@
             </div>
 
             <!-- VIEW: CHANNELS -->
-            <div id="view-channels" class="saas-view flex-1 p-8 hidden overflow-y-auto">
-                <div class="max-w-4xl mx-auto space-y-6">
-                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-                        <div class="mb-8">
-                            <h3 class="text-2xl font-bold text-slate-900 mb-2">Trung tâm Tích hợp Đa Kênh</h3>
-                            <p class="text-slate-500">Kết nối AI Chatbot của bạn với Facebook, Telegram, Zalo và Website.</p>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            <div class="border border-slate-200 rounded-xl p-5 bg-slate-50 hover:border-blue-300">
-                                <h4 class="font-bold text-slate-800 text-lg mb-4">Facebook Fanpage</h4>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Page Access Token</label>
-                                        <input type="password" id="conf_fb_token" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:border-blue-500 outline-none shadow-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Webhook URL</label>
-                                        <div class="bg-white border border-slate-200 p-2 rounded-lg text-[11px] text-slate-700 font-mono select-all shadow-inner overflow-hidden" id="fb_webhook_url"></div>
-                                    </div>
+            <div id="view-channels" class="saas-view flex-1 p-8 hidden overflow-y-auto bg-slate-50">
+                <div class="max-w-4xl mx-auto">
+                    <div class="mb-8">
+                        <h3 class="text-3xl font-bold text-slate-900 tracking-tight mb-2">Tích hợp Đa Kênh Tự Động</h3>
+                        <p class="text-slate-500 text-lg">Chỉ cần 1 cú click chuột, hệ thống sẽ tự động liên kết và cài đặt Webhook ngầm cho bạn.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Facebook Card -->
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 hover:shadow-lg transition-all flex flex-col relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -z-0"></div>
+                            <div class="flex items-center gap-4 mb-6 relative z-10">
+                                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-blue-400 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                                 </div>
-                            </div>
-
-                            <div class="border border-slate-200 rounded-xl p-5 bg-slate-50 hover:border-sky-300">
-                                <h4 class="font-bold text-slate-800 text-lg mb-4">Telegram Bot</h4>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Bot Token</label>
-                                        <input type="password" id="conf_tg_token" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:border-sky-500 outline-none shadow-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Webhook URL</label>
-                                        <div class="bg-white border border-slate-200 p-2 rounded-lg text-[11px] text-slate-700 font-mono select-all shadow-inner overflow-hidden" id="tg_webhook_url"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="border border-slate-200 rounded-xl p-5 bg-slate-50 hover:border-blue-400">
-                                <h4 class="font-bold text-slate-800 text-lg mb-4">Zalo OA</h4>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">OA Access Token</label>
-                                        <input type="password" id="conf_zl_token" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:border-blue-500 outline-none shadow-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Webhook URL</label>
-                                        <div class="bg-white border border-slate-200 p-2 rounded-lg text-[11px] text-slate-700 font-mono select-all shadow-inner overflow-hidden" id="zl_webhook_url"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="border border-slate-200 rounded-xl p-5 bg-slate-50 hover:border-emerald-400">
-                                <h4 class="font-bold text-slate-800 text-lg mb-4">Website Chat Widget</h4>
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Mã nhúng HTML</label>
-                                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg text-[11px] text-emerald-400 font-mono select-all shadow-inner overflow-hidden" id="web_widget_code"></div>
+                                    <h4 class="font-bold text-slate-900 text-lg">Facebook Fanpage</h4>
+                                    <div id="status_fb" class="text-sm font-medium text-slate-400 flex items-center gap-1.5 mt-0.5"><div class="w-2 h-2 rounded-full bg-slate-300"></div> Chưa kết nối</div>
                                 </div>
                             </div>
+                            <div class="mt-auto relative z-10 flex gap-3">
+                                <button onclick="openConnectModal('facebook')" id="btn_conn_fb" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl transition-colors">Kết Nối Tự Động</button>
+                                <button onclick="disconnectChannel('facebook')" id="btn_dis_fb" class="hidden px-4 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2.5 rounded-xl transition-colors">Ngắt</button>
+                            </div>
                         </div>
+
+                        <!-- Telegram Card -->
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 hover:shadow-lg transition-all flex flex-col relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-24 h-24 bg-sky-50 rounded-bl-full -z-0"></div>
+                            <div class="flex items-center gap-4 mb-6 relative z-10">
+                                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 to-sky-400 flex items-center justify-center text-white shadow-lg shadow-sky-500/30">
+                                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.892-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-lg">Telegram Bot</h4>
+                                    <div id="status_tg" class="text-sm font-medium text-slate-400 flex items-center gap-1.5 mt-0.5"><div class="w-2 h-2 rounded-full bg-slate-300"></div> Chưa kết nối</div>
+                                </div>
+                            </div>
+                            <div class="mt-auto relative z-10 flex gap-3">
+                                <button onclick="openConnectModal('telegram')" id="btn_conn_tg" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl transition-colors">Kết Nối Tự Động</button>
+                                <button onclick="disconnectChannel('telegram')" id="btn_dis_tg" class="hidden px-4 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2.5 rounded-xl transition-colors">Ngắt</button>
+                            </div>
+                        </div>
+
+                        <!-- Zalo OA Card -->
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 hover:shadow-lg transition-all flex flex-col relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -z-0"></div>
+                            <div class="flex items-center gap-4 mb-6 relative z-10">
+                                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-700 to-blue-500 flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-blue-600/30">Z</div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-lg">Zalo Doanh Nghiệp</h4>
+                                    <div id="status_zl" class="text-sm font-medium text-slate-400 flex items-center gap-1.5 mt-0.5"><div class="w-2 h-2 rounded-full bg-slate-300"></div> Chưa kết nối</div>
+                                </div>
+                            </div>
+                            <div class="mt-auto relative z-10 flex gap-3">
+                                <button onclick="openConnectModal('zalo')" id="btn_conn_zl" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl transition-colors">Kết Nối Tự Động</button>
+                                <button onclick="disconnectChannel('zalo')" id="btn_dis_zl" class="hidden px-4 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2.5 rounded-xl transition-colors">Ngắt</button>
+                            </div>
+                        </div>
+
+                        <!-- Website Widget -->
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 hover:shadow-lg transition-all flex flex-col relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-bl-full -z-0"></div>
+                            <div class="flex items-center gap-4 mb-5 relative z-10">
+                                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
+                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-lg">Website Widget</h4>
+                                    <div class="text-sm font-medium text-emerald-500 flex items-center gap-1.5 mt-0.5"><div class="w-2 h-2 rounded-full bg-emerald-400"></div> Sẵn sàng tích hợp</div>
+                                </div>
+                            </div>
+                            <div class="mt-auto relative z-10">
+                                <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-[11px] text-emerald-400 font-mono select-all shadow-inner overflow-hidden flex items-center justify-between group cursor-pointer" onclick="navigator.clipboard.writeText(this.querySelector('span').textContent); alert('Đã copy!')">
+                                    <span class="truncate pr-4" id="web_widget_code"></span>
+                                    <svg class="w-4 h-4 shrink-0 text-slate-500 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                </div>
+                                <p class="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-2 text-center">Copy và dán vào thẻ &lt;body&gt; Website</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Connect Modal -->
+            <div id="connect_modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center transition-opacity">
+                <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100 transform transition-transform">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-slate-900" id="connect_title">Kết nối nền tảng</h2>
+                        <button onclick="document.getElementById('connect_modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <p class="text-sm text-slate-500 mb-2" id="connect_desc">Vui lòng cung cấp Access Token để hệ thống tự động thiết lập Webhook.</p>
+                        <input type="password" id="connect_token" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-colors" placeholder="Dán Access Token vào đây...">
+                        <input type="hidden" id="connect_platform">
                         
-                        <div class="pt-6 border-t border-slate-200 flex justify-end">
-                            <button onclick="saveChannels()" id="btn_save_channels" class="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 shadow-lg">Lưu Tích Hợp Kênh</button>
-                        </div>
+                        <button onclick="confirmConnect()" id="btn_confirm_connect" class="w-full py-3.5 mt-2 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                            Xác Nhận & Kết Nối Tự Động
+                        </button>
                     </div>
                 </div>
             </div>
