@@ -133,7 +133,7 @@ def domains():
 
 @app.post("/api/domains", dependencies=[Depends(admin)])
 def create_domain(body: DomainIn):
-    return store.create_domain(body.name, **body.model_dump(exclude={"name"}))
+    return store.create_domain(body.name, owner_uid=uid, **body.model_dump(exclude={"name"}))
 
 
 @app.get("/api/domains/{name}", dependencies=[Depends(admin)])
@@ -331,7 +331,7 @@ def debug_all():
 
 
 @app.get("/api/domains/{domain}/history")
-def get_history(domain: str, limit: int = 50, uid: str = Depends(verify_token)):
+def get_history(domain: str, limit: int = 50, uid: str = Depends(admin)):
     try:
         return store.get_chat_history(domain, limit)
     except Exception as e:
