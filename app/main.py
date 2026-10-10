@@ -19,6 +19,7 @@ STATIC = config.BASE_DIR / "static"
 from firebase_admin import auth
 
 def admin(x_admin_key: str = Header(default=""), authorization: str = Header(default="")):
+    store.db() # <-- Đảm bảo Firebase đã được khởi tạo
     uid = None
     auth_err = None
     if authorization and authorization.startswith("Bearer "): 
