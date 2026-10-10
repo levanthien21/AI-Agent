@@ -20,7 +20,8 @@ DEFAULT_CONFIG = {
     "tokens": 5000, # Số lượng token mặc định ban đầu
     "active": True,
     "timeout": 15, # Giây chờ tối đa
-    "max_tokens": 150, # Số lượng token tối đa (càng ít càng nhanh)
+    "max_tokens": 150,
+    "fb_page_token": "", # Số lượng token tối đa (càng ít càng nhanh)
 }
 
 class DomainError(Exception):

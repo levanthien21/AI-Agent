@@ -99,6 +99,7 @@ class DomainIn(BaseModel):
     fallback: str | None = None
     timeout: int | None = None
     max_tokens: int | None = None
+    fb_page_token: str | None = None
 
 
 class DomainUpdate(BaseModel):
@@ -108,6 +109,7 @@ class DomainUpdate(BaseModel):
     fallback: str | None = None
     timeout: int | None = None
     max_tokens: int | None = None
+    fb_page_token: str | None = None
 
 
 class TextIn(BaseModel):
@@ -223,11 +225,17 @@ from fastapi import BackgroundTasks
 FB_VERIFY_TOKEN = os.getenv("FB_VERIFY_TOKEN", "123456789")
 FB_PAGE_ACCESS_TOKEN = os.getenv("FB_PAGE_ACCESS_TOKEN", "")
 
-def send_fb_message(sender_id: str, text: str):
-    if not FB_PAGE_ACCESS_TOKEN:
-        print("Thi?u FB_PAGE_ACCESS_TOKEN")
+def send_fb_message(domain: str, sender_id: str, text: str):
+    cfg = store.get_config(domain)
+    # Uu tin l?y Token ri?ng c?a domain, n?u khng c thi l?y bi?n m?i tru?ng chung
+    domain_token = cfg.get("fb_page_token", "")
+    token_to_use = domain_token if domain_token else FB_PAGE_ACCESS_TOKEN
+    
+    if not token_to_use:
+        print(f"Thi?u Token truy c?p Fanpage cho domain {domain}")
         return
-    url = f"https://graph.facebook.com/v19.0/me/messages?access_token={FB_PAGE_ACCESS_TOKEN}"
+        
+    url = f"https://graph.facebook.com/v19.0/me/messages?access_token={token_to_use}"
     headers = {"Content-Type": "application/json"}
     data = {
         "recipient": {"id": sender_id},
@@ -242,12 +250,9 @@ def send_fb_message(sender_id: str, text: str):
 
 def process_fb_message(domain: str, sender_id: str, message: str):
     try:
-        # Gi? s? t?o ri?ng 1 domain cho m?i page, n?u c FB_PAGE_ID c th? phn lu?ng
-        # T?m th?i ch? dng domain m?c d?nh l "test" ho?c "demo". Ta s? l?y l "test" d? c ki?n th?c
-        domain = "test" 
         res = agent.reply(domain, sender_id, message)
         answer = res.get("answer", "Xin l?i, h? th?ng dang b?n.")
-        send_fb_message(sender_id, answer)
+        send_fb_message(domain, sender_id, answer)
     except Exception as e:
         print("L?i x? ly FB message:", e)
 
