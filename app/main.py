@@ -279,7 +279,6 @@ async def fb_webhook_receive(domain: str, request: Request, background_tasks: Ba
                     background_tasks.add_task(process_fb_message, domain, sender_id, message)
         return "EVENT_RECEIVED"
     raise HTTPException(status_code=404)
-\n
 @app.get("/api/debug/spss_check")
 def debug_spss():
     try:
