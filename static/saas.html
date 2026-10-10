@@ -106,10 +106,12 @@
             </header>
 
             <!-- SaaS Navigation -->
+            <!-- SaaS Navigation -->
             <div class="bg-white border-b border-gray-200 px-6 flex gap-6 shrink-0">
                 <button onclick="switchView('inbox')" id="btn-view-inbox" class="saas-nav active px-1 py-3 text-sm font-medium text-blue-600 border-b-2 border-blue-600 transition-colors">Hộp thư (Inbox)</button>
                 <button onclick="switchView('knowledge')" id="btn-view-knowledge" class="saas-nav px-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Kiến thức AI</button>
                 <button onclick="switchView('channels')" id="btn-view-channels" class="saas-nav px-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Đa kênh</button>
+                <button onclick="switchView('settings')" id="btn-view-settings" class="saas-nav px-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Cài đặt chung</button>
             </div>
 
             <!-- View: Inbox -->
@@ -169,11 +171,46 @@
                 </div>
             </div>
             
-            <div id="view-knowledge" class="saas-view flex-1 p-8 hidden overflow-y-auto">
-                <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center">
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Tính năng đang phát triển</h3>
-                    <p class="text-gray-500 text-sm mb-4">Hệ thống đang được nâng cấp toàn diện sang mô hình SaaS đa kênh.</p>
-                    <button onclick="window.location.href='/'" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Quay về Giao diện Test cũ</button>
+            <!-- View: Knowledge -->
+            <div id="view-knowledge" class="saas-view flex-1 p-8 hidden overflow-y-auto bg-gray-50">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    
+                    <!-- Text Knowledge -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-900">Văn bản nền tảng</h3>
+                                <p class="text-sm text-gray-500">Dán trực tiếp các quy định, bảng giá, mô tả sản phẩm vào đây.</p>
+                            </div>
+                            <button onclick="saveKnowledge()" id="btn_save_know" class="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors">Lưu Văn Bản</button>
+                        </div>
+                        <textarea id="know_text" rows="10" class="w-full px-4 py-3 border border-gray-300 rounded focus:border-blue-500 outline-none text-sm" placeholder="Nhập kiến thức cho AI..."></textarea>
+                    </div>
+                    
+                    <!-- File Uploads -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-900">Tài liệu tải lên (PDF, DOCX, TXT)</h3>
+                                <p class="text-sm text-gray-500">Hệ thống sẽ tự động đọc và trích xuất nội dung từ các file này.</p>
+                            </div>
+                            <div>
+                                <input type="file" id="file_upload" class="hidden" accept=".txt,.pdf,.docx" onchange="uploadFile()">
+                                <button onclick="document.getElementById('file_upload').click()" class="px-4 py-1.5 bg-gray-800 text-white text-sm font-medium rounded hover:bg-gray-700 transition-colors flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                    Tải file lên
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded border border-gray-200 overflow-hidden">
+                            <ul id="file_list" class="divide-y divide-gray-200">
+                                <!-- Files rendered here -->
+                                <li class="p-4 text-center text-gray-500 text-sm">Chưa có file nào được tải lên.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
             
@@ -559,6 +596,157 @@
         }, 5000);
 
         
+        
+        // --- SETTINGS ---
+        async function loadSettings() {
+            if (!curDomain) return;
+            try {
+                const res = await api("/domains/" + curDomain);
+                const cfg = res.config || {};
+                $("set_display_name").value = cfg.display_name || "";
+                $("set_greeting").value = cfg.greeting || "";
+                $("set_persona").value = cfg.persona || "";
+                $("set_fallback").value = cfg.fallback || "";
+            } catch (e) {
+                console.error("Lỗi tải cài đặt", e);
+            }
+        }
+
+        async function saveSettings() {
+            if (!curDomain) return;
+            const btn = $("btn_save_settings");
+            btn.textContent = "Đang lưu...";
+            btn.disabled = true;
+            try {
+                // Preserve existing config like channel tokens
+                const res = await api("/domains/" + curDomain);
+                const existing = res.config || {};
+                
+                await api(`/domains/${curDomain}/config`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        ...existing,
+                        display_name: $("set_display_name").value.trim(),
+                        greeting: $("set_greeting").value.trim(),
+                        persona: $("set_persona").value.trim(),
+                        fallback: $("set_fallback").value.trim()
+                    })
+                });
+                
+                $("current_ai_name").textContent = $("set_display_name").value.trim() || curDomain;
+                loadDomains(); // refresh sidebar names
+                
+                btn.textContent = "Đã lưu thành công!";
+                setTimeout(() => { btn.textContent = "Lưu Cài Đặt"; btn.disabled = false; }, 2000);
+            } catch (e) {
+                alert("Lỗi lưu cài đặt: " + e.message);
+                btn.textContent = "Lưu Cài Đặt";
+                btn.disabled = false;
+            }
+        }
+
+        // --- KNOWLEDGE ---
+        async function loadKnowledge() {
+            if (!curDomain) return;
+            try {
+                const resText = await api(`/domains/${curDomain}/knowledge`);
+                $("know_text").value = resText.text || "";
+                
+                const resDetail = await api("/domains/" + curDomain);
+                renderFiles(resDetail.sources || []);
+            } catch (e) {
+                console.error("Lỗi tải kiến thức", e);
+            }
+        }
+
+        async function saveKnowledge() {
+            if (!curDomain) return;
+            const btn = $("btn_save_know");
+            btn.textContent = "Đang lưu...";
+            btn.disabled = true;
+            try {
+                await api(`/domains/${curDomain}/knowledge`, {
+                    method: "POST",
+                    body: JSON.stringify({ text: $("know_text").value })
+                });
+                btn.textContent = "Đã lưu!";
+                setTimeout(() => { btn.textContent = "Lưu Văn Bản"; btn.disabled = false; }, 2000);
+            } catch (e) {
+                alert("Lỗi lưu văn bản: " + e.message);
+                btn.textContent = "Lưu Văn Bản";
+                btn.disabled = false;
+            }
+        }
+
+        function renderFiles(files) {
+            const list = $("file_list");
+            list.innerHTML = "";
+            if (files.length === 0) {
+                list.innerHTML = `<li class="p-4 text-center text-gray-500 text-sm">Chưa có file nào được tải lên.</li>`;
+                return;
+            }
+            files.forEach(f => {
+                if (f === "main_knowledge.txt") return; // Internal file
+                const li = document.createElement("li");
+                li.className = "flex items-center justify-between p-3 hover:bg-gray-100 transition-colors";
+                li.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                        <span class="text-sm font-medium text-gray-700">${f}</span>
+                    </div>
+                    <button onclick="deleteFile('${f}')" class="text-red-500 hover:text-red-700 p-1" title="Xóa">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        async function uploadFile() {
+            if (!curDomain) return;
+            const input = $("file_upload");
+            if (!input.files || input.files.length === 0) return;
+            
+            const file = input.files[0];
+            const formData = new FormData();
+            formData.append("file", file);
+            
+            const headers = {};
+            if (currentToken) headers["Authorization"] = "Bearer " + currentToken;
+            
+            try {
+                // Show loading placeholder
+                const list = $("file_list");
+                const li = document.createElement("li");
+                li.className = "p-3 text-center text-sm text-blue-600 bg-blue-50";
+                li.textContent = "Đang xử lý tài liệu " + file.name + "...";
+                list.prepend(li);
+                
+                const res = await fetch(`/api/domains/${curDomain}/sources/file`, {
+                    method: "POST",
+                    headers: headers, // Do NOT set Content-Type for FormData
+                    body: formData
+                });
+                if (!res.ok) throw new Error("Upload thất bại");
+                
+                input.value = ""; // reset
+                loadKnowledge();
+            } catch (e) {
+                alert("Lỗi upload: " + e.message);
+                loadKnowledge();
+            }
+        }
+
+        async function deleteFile(filename) {
+            if (!curDomain || !confirm(`Bạn có chắc muốn xóa file ${filename}?`)) return;
+            try {
+                await api(`/domains/${curDomain}/sources/${encodeURIComponent(filename)}`, { method: "DELETE" });
+                loadKnowledge();
+            } catch (e) {
+                alert("Lỗi xóa file: " + e.message);
+            }
+        }
+
         function updateWebhooks() {
             const host = window.location.origin;
             $("fb_webhook_url").textContent = `${host}/api/webhook/facebook/${encodeURIComponent(curDomain)}`;
@@ -611,7 +799,11 @@
             });
             
             document.getElementById('view-' + viewId).classList.remove('hidden');
+            
             if (viewId === 'channels') loadChannelsConfig();
+            if (viewId === 'settings') loadSettings();
+            if (viewId === 'knowledge') loadKnowledge();
+
 
             const btn = document.getElementById('btn-view-' + viewId);
             btn.classList.remove('text-gray-500');
