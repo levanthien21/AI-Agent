@@ -569,6 +569,38 @@ def get_stats(name: str, uid: str = Depends(admin)):
     except Exception as e:
         return {"total_sessions": 0, "total_messages": 0, "total_tokens": 0, "total_leads": 0}
 
+
+import urllib.request
+import re
+
+@app.post("/api/domains/{name}/scrape")
+def scrape_website(name: str, body: dict, uid: str = Depends(admin)):
+    url = body.get("url", "").strip()
+    if not url: raise HTTPException(400, "Missing URL")
+    if not url.startswith("http"): url = "https://" + url
+    
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+        html = urllib.request.urlopen(req, timeout=10).read().decode('utf-8', errors='ignore')
+        
+        # Remove script and style elements
+        html = re.sub(r'<(script|style).*?>.*?</>', '', html, flags=re.IGNORECASE | re.DOTALL)
+        
+        # Extract text
+        text = re.sub(r'<[^>]+>', ' ', html)
+        
+        # Clean up whitespace
+        text = re.sub(r'\s+', ' ', text).strip()
+        
+        if len(text) < 50:
+            raise Exception("Không tìm thấy đủ nội dung văn bản.")
+            
+        # Ingest text using the existing ingest_text
+        chunks = ingest.ingest_text(name, url, text)
+        return {"ok": True, "chunks": chunks, "source": url}
+    except Exception as e:
+        raise HTTPException(400, f"Lỗi quét Website: {str(e)}")
+
 @app.get("/api/debug/spss_check")
 def debug_spss():
     try:

@@ -385,8 +385,23 @@
             <!-- VIEW: KNOWLEDGE -->
             <div id="view-knowledge" class="saas-view flex-1 p-8 hidden overflow-y-auto">
                 <div class="max-w-5xl mx-auto space-y-8">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Scrape URL Card -->
+                        <div class="col-span-1 lg:col-span-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 shadow-lg shadow-blue-500/20 text-white flex items-center justify-between">
+                            <div class="max-w-2xl">
+                                <h3 class="text-2xl font-bold mb-2 flex items-center gap-2">
+                                    <svg class="w-6 h-6 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                                    Huấn luyện AI bằng Website
+                                </h3>
+                                <p class="text-blue-100 text-sm">Chỉ cần dán đường link Website của bạn, Hệ thống Crawler sẽ tự động quét, đọc hiểu toàn bộ nội dung và đưa vào Não bộ của AI trong vài giây.</p>
+                            </div>
+                            <div class="w-full max-w-md flex gap-2 bg-white/10 p-2 rounded-xl backdrop-blur-sm border border-white/20">
+                                <input type="url" id="scrape_url" placeholder="https://website-cua-ban.com" class="flex-1 px-4 py-2.5 bg-white rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm">
+                                <button onclick="scrapeWebsite()" id="btn_scrape" class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg transition-colors whitespace-nowrap text-sm shadow-sm">Bắt Đầu Quét</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px] lg:col-span-2">
                             <div class="p-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                                 <div>
                                     <h3 class="text-base font-bold text-slate-800">Văn bản nền tảng</h3>
@@ -399,7 +414,7 @@
                             </div>
                         </div>
                         
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px]">
                             <div class="p-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                                 <div>
                                     <h3 class="text-base font-bold text-slate-800">Kho Tài Liệu File</h3>
@@ -1062,6 +1077,31 @@
             });
         }
 
+        
+        async function scrapeWebsite() {
+            if (!curDomain) return;
+            const url = $("scrape_url").value.trim();
+            if (!url) { alert("Vui lòng nhập Link Website"); return; }
+            
+            const btn = $("btn_scrape");
+            btn.innerHTML = `<svg class="w-4 h-4 animate-spin mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>`;
+            btn.disabled = true;
+            
+            try {
+                const res = await api(`/domains/${curDomain}/scrape`, {
+                    method: 'POST',
+                    body: JSON.stringify({ url: url })
+                });
+                alert(`Quét thành công! Trích xuất được ${res.chunks} đoạn kiến thức từ ${res.source}.`);
+                $("scrape_url").value = "";
+                loadKnowledge(); // Reload file list
+            } catch (e) {
+                alert(e.message);
+            }
+            btn.textContent = "Bắt Đầu Quét";
+            btn.disabled = false;
+        }
+
         async function uploadFile() {
             if (!curDomain) return;
             const input = $("file_upload");
@@ -1082,7 +1122,7 @@
                 li.textContent = "Đang xử lý tài liệu " + file.name + "...";
                 list.prepend(li);
                 
-                const res = await fetch(`/api/domains/${curDomain}/sources/file`, {
+                const res = await fetch(`/api/domains/${curDomain}/upload`, {
                     method: "POST",
                     headers: headers, // Do NOT set Content-Type for FormData
                     body: formData
