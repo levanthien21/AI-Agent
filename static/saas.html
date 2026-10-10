@@ -219,7 +219,7 @@
         async function login() {
             try {
                 $("auth_err").classList.add("hidden");
-                const email = $("email").value;
+                const email = $("email").value.trim();
                 const password = $("password").value;
                 await auth.signInWithEmailAndPassword(email, password);
             } catch (error) {
@@ -231,7 +231,7 @@
         async function register() {
             try {
                 $("auth_err").classList.add("hidden");
-                const email = $("email").value;
+                const email = $("email").value.trim();
                 const password = $("password").value;
                 await auth.createUserWithEmailAndPassword(email, password);
             } catch (error) {
