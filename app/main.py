@@ -282,9 +282,8 @@ async def fb_webhook_receive(domain: str, request: Request, background_tasks: Ba
 @app.get("/api/debug/spss_check")
 def debug_spss():
     try:
-        cfg = store.get_config("SPSS")
-        tok = cfg.get("fb_page_token", "NOT_FOUND")
-        mask = tok[:10] + "..." + tok[-5:] if len(tok) > 15 else tok
-        return {"domain": "SPSS", "has_token": bool(tok), "token": mask, "len": len(tok)}
+        domains = store.list_domains()
+        names = [d["name"] for d in domains]
+        return {"names": names}
     except Exception as e:
         return {"error": str(e)}
