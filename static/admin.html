@@ -301,10 +301,10 @@ Liên hệ hỗ trợ: 1900 xxxx..."></textarea>
   function login() { KEY = $("key").value; localStorage.setItem("admin_key", KEY); loadDomains(); }
 
   
-  async function loadHistory() {
+  async function loadHistory(silent = false) {
     if (!cur) return;
     const tbody = $("history_tbody");
-    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">Đang tải...</td></tr>';
+    if (!silent) tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">Đang tải...</td></tr>';
     try {
       const data = await api("/domains/" + encodeURIComponent(cur) + "/history");
       if (!data || !data.length) {
@@ -494,6 +494,15 @@ Liên hệ hỗ trợ: 1900 xxxx..."></textarea>
     rec.onend = () => { listening = false; $("micBtn").classList.remove("text-red-500", "bg-red-50"); $("chatIn").placeholder = "Nhập câu hỏi hoặc bấm mic để nói..."; if (heard.trim()) send(); heard = ""; };
     $("micBtn").onclick = () => { if (listening) rec.stop(); else { $("chatIn").value = ""; heard = ""; try { rec.start(); } catch(e){} } };
   } else { $("micBtn").style.display = "none"; }
+
+  
+  // Auto-refresh history every 5 seconds if tab is active
+  setInterval(() => {
+    const historyTab = $("tab-history");
+    if (historyTab && historyTab.classList.contains("active") && cur) {
+      loadHistory(true); // pass true to indicate silent refresh (no "Dang t?i...")
+    }
+  }, 5000);
 
   if (KEY) loadDomains().catch(() => {});
   </script>
