@@ -286,4 +286,11 @@ def debug_spss():
         names = [d["name"] for d in domains]
         return {"names": names}
     except Exception as e:
+        return {"error": str(e)}\n
+@app.get("/api/debug/all_domains")
+def debug_all():
+    try:
+        domains = store.list_domains()
+        return {"names": [d["name"] for d in domains], "configs": [store.get_config(d["name"]) for d in domains]}
+    except Exception as e:
         return {"error": str(e)}
