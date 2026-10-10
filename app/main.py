@@ -424,6 +424,22 @@ async def zalo_webhook(domain: str, request: Request, background_tasks: Backgrou
     except Exception:
         return {"ok": False}
 
+
+class WidgetChat(BaseModel):
+    session_id: str
+    message: str
+
+@app.post("/api/widget/{domain}/chat")
+def widget_chat(domain: str, body: WidgetChat, background_tasks: BackgroundTasks):
+    try:
+        res = agent.reply(domain, body.session_id, body.message)
+        if res.get("paused"):
+            return {"answer": "Hệ thống đang chuyển kết nối đến nhân viên hỗ trợ. Vui lòng đợi trong giây lát..."}
+        
+        return {"answer": res.get("answer", "Xin lỗi, hệ thống đang bận.")}
+    except Exception as e:
+        return {"answer": f"Lỗi hệ thống: {e}"}
+
 @app.get("/api/debug/spss_check")
 def debug_spss():
     try:

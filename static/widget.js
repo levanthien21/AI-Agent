@@ -1,121 +1,155 @@
-/* Nhúng: <script src="https://YOUR_SERVER/static/widget.js" data-domain="shop"></script>
-   data-server (tuỳ chọn): URL server, mặc định là nơi chứa widget.js */
-(function () {
-  var script = document.currentScript;
-  var domain = script.getAttribute("data-domain");
-  var server = script.getAttribute("data-server") || new URL(script.src).origin;
-  var color = script.getAttribute("data-color") || "#2563eb";
-  var sid = localStorage.getItem("aiagent_sid");
-  if (!sid) { sid = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("aiagent_sid", sid); }
+﻿(function() {
+    // Determine Domain from script src
+    const scripts = document.getElementsByTagName('script');
+    let domainName = '';
+    let hostUrl = 'https://ai-agent-zeta-gules.vercel.app';
+    for (let i = 0; i < scripts.length; i++) {
+        if (scripts[i].src.includes('widget.js')) {
+            const url = new URL(scripts[i].src);
+            domainName = url.searchParams.get('id') || 'demo';
+            hostUrl = url.origin;
+        }
+    }
 
-  var css = document.createElement("style");
-  css.textContent = [
-    ".aia-btn{position:fixed;bottom:20px;right:20px;width:58px;height:58px;border-radius:50%;border:0;background:" + color + ";color:#fff;font-size:26px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);z-index:99998}",
-    ".aia-box{position:fixed;bottom:90px;right:20px;width:340px;max-width:calc(100vw - 30px);height:480px;max-height:calc(100vh - 110px);background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.25);display:none;flex-direction:column;overflow:hidden;font:14px system-ui,sans-serif;z-index:99999}",
-    ".aia-box.open{display:flex}",
-    ".aia-head{background:" + color + ";color:#fff;padding:14px;font-weight:600}",
-    ".aia-msgs{flex:1;overflow-y:auto;padding:12px;background:#f5f6f8}",
-    ".aia-m{max-width:80%;margin:6px 0;padding:8px 12px;border-radius:14px;white-space:pre-wrap;line-height:1.4;word-wrap:break-word}",
-    ".aia-m.bot{background:#fff;color:#111;border-bottom-left-radius:4px}",
-    ".aia-m.me{background:" + color + ";color:#fff;margin-left:auto;border-bottom-right-radius:4px}",
-    ".aia-form{display:flex;border-top:1px solid #e5e7eb}",
-    ".aia-form input{flex:1;border:0;padding:13px;font-size:14px;outline:none}",
-    ".aia-form button{border:0;background:none;color:" + color + ";font-weight:600;padding:0 16px;cursor:pointer}",
-    ".aia-form button.aia-mic{font-size:22px;padding:0;color:#fff;background:" + color + ";margin:6px;border-radius:50%;width:44px;height:44px;flex:none;line-height:44px}",
-    ".aia-form button.aia-mic.on{background:#dc2626;animation:aia-pulse 1s infinite}",
-    "@keyframes aia-pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.6)}70%{box-shadow:0 0 0 14px rgba(220,38,38,0)}100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}}"
-  ].join("\n");
-  document.head.appendChild(css);
+    // Generate Session ID
+    let sessionId = localStorage.getItem('ai_widget_session');
+    if (!sessionId) {
+        sessionId = 'web_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('ai_widget_session', sessionId);
+    }
 
-  var btn = document.createElement("button"); btn.className = "aia-btn"; btn.textContent = "💬";
-  var box = document.createElement("div"); box.className = "aia-box";
-  box.innerHTML = '<div class="aia-head">Hỗ trợ</div><div class="aia-msgs"></div>' +
-    '<form class="aia-form"><button type="button" class="aia-mic" title="Bấm để nói" aria-label="Nói để soạn tin">🎤</button><input placeholder="Nhập hoặc bấm 🎤 để nói..." maxlength="2000"><button>Gửi</button></form>';
-  document.body.append(btn, box);
-  var msgs = box.querySelector(".aia-msgs"), form = box.querySelector("form"), input = box.querySelector("input");
+    // Inject Styles
+    const style = document.createElement('style');
+    style.innerHTML = `
+        #ai-widget-btn {
+            position: fixed; bottom: 20px; right: 20px;
+            width: 60px; height: 60px; border-radius: 50%;
+            background: #2563eb; color: white; border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer;
+            z-index: 999999; display: flex; align-items: center; justify-content: center;
+            transition: transform 0.2s;
+        }
+        #ai-widget-btn:hover { transform: scale(1.05); }
+        #ai-widget-panel {
+            position: fixed; bottom: 90px; right: 20px;
+            width: 350px; height: 500px; background: white;
+            border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            z-index: 999999; display: flex; flex-direction: column;
+            overflow: hidden; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s; transform: translateY(20px);
+            font-family: sans-serif;
+        }
+        #ai-widget-panel.open {
+            opacity: 1; pointer-events: all; transform: translateY(0);
+        }
+        #ai-widget-header {
+            background: #2563eb; color: white; padding: 15px;
+            font-weight: bold; font-size: 16px;
+        }
+        #ai-widget-messages {
+            flex: 1; overflow-y: auto; padding: 15px;
+            background: #f8fafc; display: flex; flex-direction: column; gap: 10px;
+        }
+        .ai-msg, .user-msg {
+            max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.4;
+        }
+        .ai-msg { background: white; color: #1e293b; align-self: flex-start; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; }
+        .user-msg { background: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        #ai-widget-input-area {
+            display: flex; padding: 10px; background: white; border-top: 1px solid #e2e8f0;
+        }
+        #ai-widget-input {
+            flex: 1; border: 1px solid #cbd5e1; border-radius: 20px;
+            padding: 8px 15px; font-size: 14px; outline: none;
+        }
+        #ai-widget-send {
+            background: #2563eb; color: white; border: none; border-radius: 50%;
+            width: 36px; height: 36px; margin-left: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .typing { display: flex; gap: 4px; align-items: center; height: 20px; padding: 0 10px; }
+        .typing span { width: 6px; height: 6px; background: #94a3b8; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing span:nth-child(1) { animation-delay: -0.32s; }
+        .typing span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+    `;
+    document.head.appendChild(style);
 
-  function add(text, who) {
-    var d = document.createElement("div"); d.className = "aia-m " + who; d.textContent = text;
-    msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight; return d;
-  }
+    // Inject HTML
+    const container = document.createElement('div');
+    container.innerHTML = `
+        <button id="ai-widget-btn">
+            <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"></path></svg>
+        </button>
+        <div id="ai-widget-panel">
+            <div id="ai-widget-header">Trợ lý ảo AI</div>
+            <div id="ai-widget-messages">
+                <div class="ai-msg">Xin chào! Tôi có thể giúp gì cho bạn hôm nay?</div>
+            </div>
+            <div id="ai-widget-input-area">
+                <input type="text" id="ai-widget-input" placeholder="Nhập tin nhắn..." autocomplete="off">
+                <button id="ai-widget-send">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(container);
 
-  fetch(server + "/api/domains/" + encodeURIComponent(domain) + "/public").then(function (r) { return r.json(); })
-    .then(function (i) { box.querySelector(".aia-head").textContent = i.display_name; add(i.greeting, "bot"); })
-    .catch(function () { add("Xin chào! Mình có thể giúp gì cho bạn?", "bot"); });
+    // Logic
+    const btn = document.getElementById('ai-widget-btn');
+    const panel = document.getElementById('ai-widget-panel');
+    const msgs = document.getElementById('ai-widget-messages');
+    const input = document.getElementById('ai-widget-input');
+    const send = document.getElementById('ai-widget-send');
 
-  btn.onclick = function () { box.classList.toggle("open"); if (box.classList.contains("open")) input.focus(); };
-
-  // ----- Giọng nói: nói để soạn tin, tự gửi, và đọc to câu trả lời -----
-  var micBtn = box.querySelector(".aia-mic");
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  var voiceMode = false, rec = null, listening = false, heard = "";
-
-  function speak(text) {
-    if (!("speechSynthesis" in window) || !text) return;
-    window.speechSynthesis.cancel();
-    var u = new SpeechSynthesisUtterance(text);
-    u.lang = "vi-VN"; u.rate = 0.95;
-    window.speechSynthesis.speak(u);
-  }
-
-  if (!SR) {
-    micBtn.style.display = "none"; // trình duyệt không hỗ trợ (vd. Firefox)
-  } else {
-    rec = new SR();
-    rec.lang = "vi-VN"; rec.interimResults = true; rec.continuous = false;
-    rec.onstart = function () { listening = true; micBtn.classList.add("on"); input.placeholder = "Đang nghe bạn nói..."; };
-    rec.onresult = function (ev) {
-      var t = "";
-      for (var i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript;
-      heard = t; input.value = t;
+    let isOpen = false;
+    btn.onclick = () => {
+        isOpen = !isOpen;
+        if (isOpen) {
+            panel.classList.add('open');
+            btn.innerHTML = `<svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>`;
+            input.focus();
+        } else {
+            panel.classList.remove('open');
+            btn.innerHTML = `<svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"></path></svg>`;
+        }
     };
-    rec.onerror = function (ev) {
-      if (ev.error === "not-allowed" || ev.error === "service-not-allowed") add("Bạn hãy cho phép trình duyệt dùng micro nhé.", "bot");
-      else if (ev.error === "no-speech") add("Mình chưa nghe thấy gì, bạn thử nói lại nhé.", "bot");
-      heard = "";
-    };
-    rec.onend = function () {
-      listening = false; micBtn.classList.remove("on"); input.placeholder = "Nhập hoặc bấm 🎤 để nói...";
-      if (heard.trim()) { voiceMode = true; form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event("submit", { cancelable: true })); }
-      heard = "";
-    };
-    micBtn.onclick = function () {
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-      if (listening) { rec.stop(); return; }
-      input.value = ""; heard = "";
-      try { rec.start(); } catch (e) { /* đang chạy */ }
-    };
-  }
 
-  form.onsubmit = function (e) {
-    e.preventDefault();
-    var text = input.value.trim(); if (!text) return;
-    var spoken = voiceMode; voiceMode = false;
-    input.value = ""; add(text, "me");
-    var typing = add("...", "bot");
-    fetch(server + "/api/chat", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ domain: domain, session_id: sid, message: text })
-    }).then(async function (r) {
-      if (!r.ok) {
-         var j = await r.json().catch(function(){return {};});
-         throw new Error(j.detail || "L?i k?t n?i");
-      }
-      typing.textContent = "";
-      var reader = r.body.getReader();
-      var decoder = new TextDecoder("utf-8");
-      return (function readStream() {
-        return reader.read().then(function (result) {
-          if (result.done) {
-             if (spoken) speak(typing.textContent);
-             return;
-          }
-          typing.textContent += decoder.decode(result.value, { stream: true });
-          msgs.scrollTop = msgs.scrollHeight;
-          return readStream();
-        });
-      })();
-    }).catch(function (err) { typing.textContent = err.message || "L?i k?t n?i, vui l�ng th? l?i."; });
-  };
+    const scrollToBottom = () => { msgs.scrollTop = msgs.scrollHeight; };
+
+    const sendMessage = async () => {
+        const text = input.value.trim();
+        if (!text) return;
+        
+        // Add user msg
+        msgs.innerHTML += `<div class="user-msg">${text.replace(/</g, "&lt;")}</div>`;
+        input.value = '';
+        scrollToBottom();
+
+        // Add typing indicator
+        const typingId = 'typing_' + Date.now();
+        msgs.innerHTML += `<div class="ai-msg" id="${typingId}"><div class="typing"><span></span><span></span><span></span></div></div>`;
+        scrollToBottom();
+
+        try {
+            const res = await fetch(`${hostUrl}/api/widget/${domainName}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId, message: text })
+            });
+            const data = await res.json();
+            
+            document.getElementById(typingId).remove();
+            msgs.innerHTML += `<div class="ai-msg">${data.answer.replace(/\n/g, "<br>")}</div>`;
+            scrollToBottom();
+        } catch (e) {
+            document.getElementById(typingId).remove();
+            msgs.innerHTML += `<div class="ai-msg" style="color:red">Lỗi kết nối máy chủ!</div>`;
+            scrollToBottom();
+        }
+    };
+
+    send.onclick = sendMessage;
+    input.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
 })();
-
