@@ -533,6 +533,42 @@ def get_leads(name: str, uid: str = Depends(admin)):
     except Exception as e:
         return []
 
+
+@app.get("/api/domains/{name}/stats")
+def get_stats(name: str, uid: str = Depends(admin)):
+    try:
+        docs = store.db().collection("domains").document(name).collection("history").stream()
+        total_sessions = 0
+        total_messages = 0
+        total_tokens = 0
+        total_leads = 0
+        phone_regex = re.compile(r"(0[3|5|7|8|9][0-9]{8})")
+        
+        for doc in docs:
+            total_sessions += 1
+            data = doc.to_dict()
+            msgs = data.get("messages", [])
+            total_messages += len(msgs)
+            
+            # Count tokens
+            for m in msgs:
+                total_tokens += m.get("tokens", 0)
+                
+            # Count leads
+            for m in msgs:
+                if phone_regex.search(m.get("content", "")):
+                    total_leads += 1
+                    break
+
+        return {
+            "total_sessions": total_sessions,
+            "total_messages": total_messages,
+            "total_tokens": total_tokens,
+            "total_leads": total_leads
+        }
+    except Exception as e:
+        return {"total_sessions": 0, "total_messages": 0, "total_tokens": 0, "total_leads": 0}
+
 @app.get("/api/debug/spss_check")
 def debug_spss():
     try:
