@@ -279,3 +279,13 @@ async def fb_webhook_receive(domain: str, request: Request, background_tasks: Ba
                     background_tasks.add_task(process_fb_message, domain, sender_id, message)
         return "EVENT_RECEIVED"
     raise HTTPException(status_code=404)
+\n
+@app.get("/api/debug/spss_check")
+def debug_spss():
+    try:
+        cfg = store.get_config("SPSS")
+        tok = cfg.get("fb_page_token", "NOT_FOUND")
+        mask = tok[:10] + "..." + tok[-5:] if len(tok) > 15 else tok
+        return {"domain": "SPSS", "has_token": bool(tok), "token": mask, "len": len(tok)}
+    except Exception as e:
+        return {"error": str(e)}
