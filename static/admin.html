@@ -68,6 +68,7 @@
             <button class="tab-btn pb-3" onclick="switchTab('tab-knowledge')">Trung tâm Kiến thức</button>
             <button class="tab-btn pb-3" onclick="switchTab('tab-tokens')">Quản lý Token (Billing)</button>
             <button class="tab-btn pb-3" onclick="switchTab('tab-test')">Test Bot</button>
+            <button class="tab-btn pb-3" onclick="switchTab('tab-history')">Lịch sử & Thống kê</button>
           </div>
         </div>
 
@@ -192,6 +193,55 @@ Liên hệ hỗ trợ: 1900 xxxx..."></textarea>
             </div>
           </div>
 
+          
+          <!-- HISTORY TAB -->
+          <div id="tab-history" class="tab-content max-w-5xl flex flex-col h-[600px]">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-full overflow-hidden">
+              <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <h3 class="font-semibold text-gray-900">Lịch sử trò chuyện (50 câu gần nhất)</h3>
+                <button onclick="loadHistory()" class="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded font-medium border border-blue-200">Làm mới</button>
+              </div>
+              <div class="overflow-y-auto flex-1">
+                <table class="w-full text-left border-collapse text-sm">
+                  <thead class="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
+                    <tr class="text-gray-600">
+                      <th class="p-3 font-medium">Thời gian</th>
+                      <th class="p-3 font-medium">Nguồn</th>
+                      <th class="p-3 font-medium">Phiên</th>
+                      <th class="p-3 font-medium w-1/2">Nội dung hỏi</th>
+                      <th class="p-3 font-medium text-right">Tokens tiêu thụ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="history_tbody" class="divide-y divide-gray-100">
+                    <tr><td colspan="5" class="p-4 text-center text-gray-500">Chưa có dữ liệu.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Modal chi tiết -->
+            <div id="history_modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col shadow-xl">
+                <div class="p-4 border-b flex justify-between items-center">
+                  <h3 class="font-bold text-gray-900">Chi tiết Hội thoại</h3>
+                  <button onclick="$('history_modal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  </button>
+                </div>
+                <div class="p-5 overflow-y-auto space-y-4 text-sm">
+                  <div>
+                    <span class="font-semibold text-gray-700 block mb-1">Khách hỏi:</span>
+                    <div id="modal_q" class="bg-gray-100 p-3 rounded text-gray-800 whitespace-pre-wrap"></div>
+                  </div>
+                  <div>
+                    <span class="font-semibold text-gray-700 block mb-1">AI trả lời:</span>
+                    <div id="modal_a" class="bg-blue-50 p-3 rounded text-blue-900 whitespace-pre-wrap"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- TEST TAB -->
           <div id="tab-test" class="tab-content max-w-3xl h-[600px] flex flex-col">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-full overflow-hidden">
@@ -250,6 +300,53 @@ Liên hệ hỗ trợ: 1900 xxxx..."></textarea>
 
   function login() { KEY = $("key").value; localStorage.setItem("admin_key", KEY); loadDomains(); }
 
+  
+  async function loadHistory() {
+    if (!cur) return;
+    const tbody = $("history_tbody");
+    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">Đang tải...</td></tr>';
+    try {
+      const data = await api("/domains/" + encodeURIComponent(cur) + "/history");
+      if (!data || !data.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">Chưa có lịch sử nào.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = '';
+      data.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-blue-50 transition-colors cursor-pointer";
+        tr.onclick = () => {
+          $("modal_q").textContent = item.question || "";
+          $("modal_a").textContent = item.answer || "";
+          $("history_modal").classList.remove('hidden');
+        };
+        
+        let dateStr = "";
+        if (item.timestamp) {
+           const d = new Date(item.timestamp);
+           dateStr = d.toLocaleString('vi-VN');
+        }
+        
+        const srcBadge = item.source === 'facebook' 
+            ? '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">Facebook</span>' 
+            : '<span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-semibold">Web</span>';
+        
+        const qShort = (item.question || "").substring(0, 50) + ((item.question || "").length > 50 ? "..." : "");
+        
+        tr.innerHTML = `
+          <td class="p-3 text-gray-500 whitespace-nowrap">${dateStr}</td>
+          <td class="p-3">${srcBadge}</td>
+          <td class="p-3 text-gray-500 font-mono text-xs" title="${item.session_id}">${(item.session_id||"").substring(0,8)}...</td>
+          <td class="p-3 text-gray-900 font-medium truncate max-w-xs">${qShort}</td>
+          <td class="p-3 text-right"><span class="font-bold text-red-500 bg-red-50 px-2 py-1 rounded">${item.tokens_used || 0}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">Lỗi tải dữ liệu</td></tr>';
+    }
+  }
+
   async function loadDomains() {
     const list = await api("/domains"), ul = $("domains"); ul.textContent = "";
     list.forEach(d => {
@@ -305,7 +402,7 @@ Liên hệ hỗ trợ: 1900 xxxx..."></textarea>
     $("embed").textContent = `<script src="${location.origin}/static/widget.js" data-domain="${name}"></` + `script>`;
     
     // Reset test chat
-    resetChat(); loadDomains();
+    resetChat(); loadHistory(); loadDomains();
   }
 
   async function saveConfig() {

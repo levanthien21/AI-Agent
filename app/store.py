@@ -240,3 +240,33 @@ def get_main_knowledge(name: str) -> str:
     chunks, _ = _get_cache(name)
     main_texts = [c["text"] for c in chunks if c["source"] == "main-knowledge"]
     return "\n\n".join(main_texts)
+\n
+def save_chat_history(name: str, session_id: str, question: str, answer: str, tokens_used: int, source: str = "web"):
+    try:
+        doc_ref = db().collection("domains").document(name).collection("history").document()
+        doc_ref.set({
+            "session_id": session_id,
+            "question": question,
+            "answer": answer,
+            "tokens_used": tokens_used,
+            "source": source,
+            "timestamp": firestore.SERVER_TIMESTAMP
+        })
+    except Exception as e:
+        print("L?i luu l?ch s?:", e)
+
+def get_chat_history(name: str, limit: int = 50) -> list[dict]:
+    try:
+        docs = db().collection("domains").document(name).collection("history").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(limit).stream()
+        res = []
+        for doc in docs:
+            data = doc.to_dict()
+            ts = data.get("timestamp")
+            if ts:
+                # convert datetime to string
+                data["timestamp"] = ts.isoformat() if hasattr(ts, 'isoformat') else str(ts)
+            res.append(data)
+        return res
+    except Exception as e:
+        print("L?i l?y l?ch s?:", e)
+        return []

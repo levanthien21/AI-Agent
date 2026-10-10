@@ -250,7 +250,7 @@ def send_fb_message(domain: str, sender_id: str, text: str):
 
 def process_fb_message(domain: str, sender_id: str, message: str):
     try:
-        res = agent.reply(domain, sender_id, message)
+        res = agent.reply(domain, "fb_" + sender_id, message)
         answer = res.get("answer", "Xin l?i, h? th?ng dang b?n.")
         send_fb_message(domain, sender_id, answer)
     except Exception as e:
@@ -295,3 +295,10 @@ def debug_all():
         return {"names": [d["name"] for d in domains], "configs": [store.get_config(d["name"]) for d in domains]}
     except Exception as e:
         return {"error": str(e)}
+\n
+@app.get("/api/domains/{domain}/history")
+def get_history(domain: str, limit: int = 50, _=Depends(admin)):
+    try:
+        return store.get_chat_history(domain, limit)
+    except Exception as e:
+        raise HTTPException(500, str(e))
