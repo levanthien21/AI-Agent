@@ -16,11 +16,20 @@ app.add_middleware(
 STATIC = config.BASE_DIR / "static"
 
 
-def admin(x_admin_key: str = Header(default="")):
-    if not config.ADMIN_KEY or not hmac.compare_digest(x_admin_key, config.ADMIN_KEY):
-        raise HTTPException(401, "Sai hoặc chưa cấu hình ADMIN_KEY")
+from firebase_admin import auth
 
-
+def admin(x_admin_key: str = Header(default=""), authorization: str = Header(default="")):
+    uid = None
+    if authorization and authorization.startswith("Bearer "): 
+        token = authorization.split("Bearer ")[1]
+        try:
+            decoded = auth.verify_id_token(token)
+            return decoded["uid"]
+        except Exception:
+            pass
+    if config.ADMIN_KEY and hmac.compare_digest(x_admin_key, config.ADMIN_KEY):
+        return None
+    raise HTTPException(status_code=401, detail="Unauthorized")
 @app.exception_handler(Exception)
 async def _global_error(request: Request, exc: Exception):
     import traceback
@@ -208,6 +217,10 @@ def serve_static(filename: str):
     if not path.is_file():
         raise HTTPException(404)
     return FileResponse(path)
+
+@app.get("/saas")
+def saas_page():
+    return FileResponse(STATIC / "saas.html")
 
 @app.get("/admin")
 def admin_page():
