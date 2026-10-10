@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Omnichannel SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <style>
+        .hidden { display: none !important; }
+        .inbox-scroll::-webkit-scrollbar { width: 6px; }
+        .inbox-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex overflow-hidden font-sans">
+
+    <!-- Auth Modal -->
+    <div id="auth_screen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-100">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900">AI SaaS Platform</h1>
+                <p class="text-gray-500 mt-2">Đăng nhập để quản lý đa kênh</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+                    <input type="password" id="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                </div>
+                <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors">Đăng nhập</button>
+                <div class="relative flex items-center py-4">
+                    <div class="flex-grow border-t border-gray-300"></div>
+                    <span class="flex-shrink-0 mx-4 text-gray-400 text-sm">Hoặc</span>
+                    <div class="flex-grow border-t border-gray-300"></div>
+                </div>
+                <button onclick="register()" class="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2.5 rounded-lg transition-colors">Đăng ký tài khoản mới</button>
+                <p id="auth_err" class="text-red-500 text-sm text-center mt-2 hidden"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="main_app" class="flex w-full h-full hidden">
+        
+        <!-- Sidebar -->
+        <div class="w-64 bg-gray-900 text-white flex flex-col shrink-0">
+            <div class="p-4 border-b border-gray-800 flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center font-bold">AI</div>
+                <span class="font-semibold tracking-wide">SaaS Workspace</span>
+            </div>
+            
+            <div class="p-4 flex-1 flex flex-col h-full overflow-hidden">
+                <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">AI Của Bạn</div>
+                <div id="domain_list" class="space-y-1 mb-4 flex-1 overflow-y-auto">
+                    <!-- Domains rendered here -->
+                </div>
+                
+                <button onclick="createNew()" class="w-full py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded border border-gray-700 text-sm flex items-center justify-center gap-2 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Tạo AI mới
+                </button>
+            </div>
+            
+            <div class="p-4 border-t border-gray-800 shrink-0">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium truncate" id="user_email">user@email.com</div>
+                        <div class="text-xs text-gray-500">Plan: Pro</div>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full py-1.5 text-xs text-gray-400 hover:text-white border border-gray-700 rounded transition-colors">Đăng xuất</button>
+            </div>
+        </div>
+
+        <!-- Working Area -->
+        <div class="flex-1 flex flex-col bg-gray-50 relative">
+            <div id="no_selection" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
+                <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <h2 class="text-xl font-medium text-gray-500">Chọn một AI để quản lý</h2>
+                <button onclick="window.location.href='/'" class="mt-4 text-blue-500 hover:underline">Về giao diện cũ (Admin.html)</button>
+            </div>
+            
+            <!-- Navbar -->
+            <header class="bg-white border-b border-gray-200 h-16 flex items-center px-6 justify-between shrink-0">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-xl font-bold text-gray-900" id="current_ai_name">Domain Name</h2>
+                    <span class="px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">Hoạt động</span>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-gray-500">Tokens còn lại:</span>
+                        <span class="font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full" id="token_count">0</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- SaaS Navigation -->
+            <div class="bg-white border-b border-gray-200 px-6 flex gap-6 shrink-0">
+                <button onclick="switchView('inbox')" id="btn-view-inbox" class="saas-nav active px-1 py-3 text-sm font-medium text-blue-600 border-b-2 border-blue-600 transition-colors">Hộp thư (Inbox)</button>
+                <button onclick="switchView('knowledge')" id="btn-view-knowledge" class="saas-nav px-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Kiến thức AI</button>
+                <button onclick="switchView('channels')" id="btn-view-channels" class="saas-nav px-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Đa kênh</button>
+            </div>
+
+            <!-- View: Inbox (MOCKUP for now) -->
+            <div id="view-inbox" class="saas-view flex-1 flex overflow-hidden">
+                <div class="w-1/3 bg-white border-r border-gray-200 flex flex-col">
+                    <div class="p-3 border-b border-gray-100 bg-gray-50">
+                        <input type="text" placeholder="Tìm kiếm tin nhắn..." class="w-full px-3 py-1.5 text-sm bg-white border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div class="flex-1 overflow-y-auto inbox-scroll divide-y divide-gray-100">
+                        <div class="p-4 text-center text-gray-500 text-sm mt-10">
+                            Tính năng Hộp thư hợp nhất đang được hoàn thiện ở Giai đoạn 2.
+                            <br><br>
+                            Vui lòng sử dụng Giao diện cũ để test Bot và nạp tài liệu.
+                        </div>
+                    </div>
+                </div>
+                <div class="w-2/3 bg-gray-50 flex flex-col">
+                    <div class="flex-1 flex items-center justify-center text-gray-400 flex-col gap-2">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                        <p>Chọn một cuộc hội thoại để xem chi tiết</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="view-knowledge" class="saas-view flex-1 p-8 hidden overflow-y-auto">
+                <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Tính năng đang phát triển</h3>
+                    <p class="text-gray-500 text-sm mb-4">Hệ thống đang được nâng cấp toàn diện sang mô hình SaaS đa kênh.</p>
+                    <button onclick="window.location.href='/'" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Quay về Giao diện Test cũ</button>
+                </div>
+            </div>
+            
+            <div id="view-channels" class="saas-view flex-1 p-8 hidden overflow-y-auto">
+                <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Đa nền tảng (Omnichannel)</h3>
+                    <p class="text-gray-500 text-sm mb-6">Kết nối AI của bạn với các kênh giao tiếp phổ biến nhất.</p>
+                    <div class="grid grid-cols-2 gap-4 text-left">
+                        <div class="border border-blue-200 bg-blue-50 p-4 rounded flex items-center justify-between">
+                            <span class="font-bold text-blue-700">Facebook Messenger</span>
+                            <span class="px-2 py-1 bg-blue-600 text-white text-xs rounded">Đã kết nối</span>
+                        </div>
+                        <div class="border border-gray-200 p-4 rounded flex items-center justify-between opacity-50 cursor-not-allowed">
+                            <span class="font-bold text-gray-700">Zalo OA</span>
+                            <span class="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded">Sắp ra mắt</span>
+                        </div>
+                        <div class="border border-gray-200 p-4 rounded flex items-center justify-between opacity-50 cursor-not-allowed">
+                            <span class="font-bold text-gray-700">Telegram Bot</span>
+                            <span class="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded">Sắp ra mắt</span>
+                        </div>
+                        <div class="border border-gray-200 p-4 rounded flex items-center justify-between opacity-50 cursor-not-allowed">
+                            <span class="font-bold text-gray-700">Website Widget</span>
+                            <span class="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded">Sắp ra mắt</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDoxBVP9PaesZwkylNfnWJPCRQemkiMsVM",
+            authDomain: "ai-agent-d1d5e.firebaseapp.com",
+            projectId: "ai-agent-d1d5e",
+            storageBucket: "ai-agent-d1d5e.firebasestorage.app",
+            messagingSenderId: "158680895070",
+            appId: "1:158680895070:web:1055fb9e436a41fabceecf"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        let currentToken = null;
+        let curDomain = null;
+
+        const $ = id => document.getElementById(id);
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentToken = await user.getIdToken();
+                $("auth_screen").classList.add("hidden");
+                $("main_app").classList.remove("hidden");
+                $("user_email").textContent = user.email;
+                loadDomains();
+            } else {
+                currentToken = null;
+                $("auth_screen").classList.remove("hidden");
+                $("main_app").classList.add("hidden");
+            }
+        });
+
+        async function api(path, opts = {}) {
+            if (!opts.headers) opts.headers = {};
+            if (currentToken) {
+                opts.headers["Authorization"] = "Bearer " + currentToken;
+            }
+            opts.headers["Content-Type"] = "application/json";
+            
+            const res = await fetch("/api" + path, opts);
+            if (!res.ok) {
+                let err = "API Error";
+                try { err = (await res.json()).detail; } catch (e) {}
+                throw new Error(err);
+            }
+            return res.json();
+        }
+
+        async function login() {
+            try {
+                $("auth_err").classList.add("hidden");
+                const email = $("email").value;
+                const password = $("password").value;
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                $("auth_err").textContent = "Lỗi đăng nhập: " + error.message;
+                $("auth_err").classList.remove("hidden");
+            }
+        }
+
+        async function register() {
+            try {
+                $("auth_err").classList.add("hidden");
+                const email = $("email").value;
+                const password = $("password").value;
+                await auth.createUserWithEmailAndPassword(email, password);
+            } catch (error) {
+                $("auth_err").textContent = "Lỗi đăng ký: " + error.message;
+                $("auth_err").classList.remove("hidden");
+            }
+        }
+
+        function logout() {
+            auth.signOut();
+        }
+
+        async function loadDomains() {
+            try {
+                const domains = await api("/domains");
+                const list = $("domain_list");
+                list.innerHTML = "";
+                domains.forEach(d => {
+                    const btn = document.createElement("button");
+                    btn.className = "w-full text-left px-3 py-2 rounded text-sm transition-colors hover:bg-gray-800 " + (curDomain === d.name ? "bg-gray-800 text-white" : "text-gray-400");
+                    btn.innerHTML = `<span class="block truncate font-medium">${d.display_name}</span>`;
+                    btn.onclick = () => selectDomain(d.name, d.display_name);
+                    list.appendChild(btn);
+                });
+            } catch (e) {
+                alert("Lỗi tải danh sách AI: " + e.message);
+            }
+        }
+
+        async function selectDomain(name, displayName) {
+            curDomain = name;
+            $("no_selection").classList.add("hidden");
+            $("current_ai_name").textContent = displayName;
+            loadDomains(); // refresh active state
+            
+            // fetch token info
+            try {
+                const config = await api("/domains/" + name);
+                $("token_count").textContent = (config.config.tokens || 0).toLocaleString();
+            } catch (e) {}
+        }
+
+        async function createNew() {
+            const name = prompt("Nhập tên định danh (viết liền không dấu, ví dụ: shop_hoa):");
+            if (!name) return;
+            try {
+                await api("/domains", {
+                    method: "POST",
+                    body: JSON.stringify({ name: name, config: {} })
+                });
+                loadDomains();
+            } catch (e) {
+                alert("Lỗi: " + e.message);
+            }
+        }
+
+        function switchView(viewId) {
+            document.querySelectorAll('.saas-view').forEach(e => e.classList.add('hidden'));
+            document.querySelectorAll('.saas-nav').forEach(e => {
+                e.classList.remove('active', 'text-blue-600', 'border-b-2', 'border-blue-600');
+                e.classList.add('text-gray-500');
+            });
+            
+            document.getElementById('view-' + viewId).classList.remove('hidden');
+            const btn = document.getElementById('btn-view-' + viewId);
+            btn.classList.remove('text-gray-500');
+            btn.classList.add('active', 'text-blue-600', 'border-b-2', 'border-blue-600');
+        }
+    </script>
+</body>
+</html>
