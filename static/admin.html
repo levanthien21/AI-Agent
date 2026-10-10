@@ -237,6 +237,10 @@ Liên hệ hỗ trợ: 1900 xxxx..."></textarea>
                     <span class="font-semibold text-gray-700 block mb-1">AI trả lời:</span>
                     <div id="modal_a" class="bg-blue-50 p-3 rounded text-blue-900 whitespace-pre-wrap"></div>
                   </div>
+                  <div>
+                    <span class="font-semibold text-gray-700 block mb-1">Log Hệ Thống (Debug):</span>
+                    <div id="modal_log" class="bg-gray-800 p-3 rounded text-green-400 font-mono text-xs whitespace-pre-wrap overflow-x-auto"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -318,6 +322,7 @@ Liên hệ hỗ trợ: 1900 xxxx..."></textarea>
         tr.onclick = () => {
           $("modal_q").textContent = item.question || "";
           $("modal_a").textContent = item.answer || "";
+          $("modal_log").textContent = item.debug_log || "Không có log cho phiên này.";
           $("history_modal").classList.remove('hidden');
         };
         

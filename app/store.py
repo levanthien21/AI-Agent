@@ -241,7 +241,7 @@ def get_main_knowledge(name: str) -> str:
     main_texts = [c["text"] for c in chunks if c["source"] == "main-knowledge"]
     return "\n\n".join(main_texts)
 
-def save_chat_history(name: str, session_id: str, question: str, answer: str, tokens_used: int, source: str = "web"):
+def save_chat_history(name: str, session_id: str, question: str, answer: str, tokens_used: int, source: str = "web", debug_log: str = ""):
     try:
         doc_ref = db().collection("domains").document(name).collection("history").document()
         doc_ref.set({
@@ -250,6 +250,7 @@ def save_chat_history(name: str, session_id: str, question: str, answer: str, to
             "answer": answer,
             "tokens_used": tokens_used,
             "source": source,
+            "debug_log": debug_log,
             "timestamp": firestore.SERVER_TIMESTAMP
         })
     except Exception as e:

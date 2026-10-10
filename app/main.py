@@ -248,9 +248,9 @@ def send_fb_message(domain: str, sender_id: str, text: str):
     except Exception as e:
         print(f"L?i g?i tin nh?n FB: {e}")
 
-def process_fb_message(domain: str, sender_id: str, message: str):
+def process_fb_message(domain: str, sender_id: str, message_data):
     try:
-        res = agent.reply(domain, "fb_" + sender_id, message)
+        res = agent.reply(domain, "fb_" + sender_id, message_data)
         answer = res.get("answer", "Xin l?i, h? th?ng dang b?n.")
         send_fb_message(domain, sender_id, answer)
     except Exception as e:
@@ -274,9 +274,29 @@ async def fb_webhook_receive(domain: str, request: Request, background_tasks: Ba
         for entry in body.get("entry", []):
             for event in entry.get("messaging", []):
                 sender_id = event.get("sender", {}).get("id")
-                message = event.get("message", {}).get("text")
-                if sender_id and message:
-                    background_tasks.add_task(process_fb_message, domain, sender_id, message)
+                msg_obj = event.get("message", {})
+                text_content = msg_obj.get("text", "")
+                
+                attachments = msg_obj.get("attachments", [])
+                image_urls = []
+                has_sticker = False
+                
+                for att in attachments:
+                    if att.get("type") == "image":
+                        payload = att.get("payload", {})
+                        if "sticker_id" in payload:
+                            has_sticker = True
+                        elif "url" in payload:
+                            image_urls.append(payload["url"])
+                
+                if not text_content and not image_urls and not has_sticker:
+                    continue
+                    
+                if has_sticker and not text_content and not image_urls:
+                    text_content = "[Khách gửi một Sticker/Icon]"
+                
+                if sender_id:
+                    background_tasks.add_task(process_fb_message, domain, sender_id, {"text": text_content, "images": image_urls})
         return "EVENT_RECEIVED"
     raise HTTPException(status_code=404)
 @app.get("/api/debug/spss_check")
