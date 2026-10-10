@@ -58,6 +58,7 @@ def reply(domain: str, session_id: str, message: str) -> dict:
         
     cost = len(message) + len(answer)
     store.deduct_tokens(domain, cost)
+    store.save_chat_history(domain, session_id, message, answer, cost, source="facebook" if "fb" in session_id else "web")
 
     history += [{"role": "user", "text": message}, {"role": "model", "text": answer}]
     del history[: -config.HISTORY_TURNS * 2]
@@ -104,5 +105,6 @@ def reply_stream(domain: str, session_id: str, message: str):
     if full_answer:
         cost = len(message) + len(full_answer)
         store.deduct_tokens(domain, cost)
+        store.save_chat_history(domain, session_id, message, full_answer, cost, source="web")
         history += [{"role": "user", "text": message}, {"role": "model", "text": full_answer}]
         del history[: -config.HISTORY_TURNS * 2]
