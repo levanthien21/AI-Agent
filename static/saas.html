@@ -3,335 +3,368 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Omnichannel SaaS</title>
+    <title>OmniAI - Nền tảng AI Chatbot</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <style>
+        body { font-family: 'Inter', sans-serif; }
         .hidden { display: none !important; }
-        .inbox-scroll::-webkit-scrollbar { width: 6px; }
-        .inbox-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .saas-nav.active { background-color: #f1f5f9; color: #0f172a; font-weight: 600; border-bottom: 2px solid #3b82f6; }
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
     </style>
 </head>
-<body class="bg-gray-100 h-screen flex overflow-hidden font-sans">
+<body class="bg-slate-50 h-screen overflow-hidden text-slate-800">
 
-    <!-- Auth Modal -->
-    <div id="auth_screen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-100">
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-4">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+    <!-- Auth Modal (Modern Split Screen) -->
+    <div id="auth_screen" class="fixed inset-0 z-50 flex bg-white">
+        <!-- Left Side: Brand -->
+        <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-indigo-700 via-blue-600 to-sky-500 flex-col justify-center items-center p-12 text-center relative overflow-hidden">
+            <div class="relative z-10">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-md mb-8 shadow-xl border border-white/20">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                 </div>
-                <h1 class="text-2xl font-bold text-gray-900">AI SaaS Platform</h1>
-                <p class="text-gray-500 mt-2">Đăng nhập để quản lý đa kênh</p>
+                <h1 class="text-4xl font-bold text-white mb-4 tracking-tight">OmniAI Platform</h1>
+                <p class="text-blue-100 text-lg max-w-md mx-auto leading-relaxed">Giải pháp tự động hóa chăm sóc khách hàng đa kênh bằng Trí tuệ nhân tạo. Tăng x3 tỷ lệ chuyển đổi ngay hôm nay.</p>
             </div>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" id="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+        </div>
+        
+        <!-- Right Side: Login -->
+        <div class="w-full lg:w-1/2 flex items-center justify-center bg-slate-50 p-8">
+            <div class="w-full max-w-md bg-white p-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+                <div class="text-center mb-10">
+                    <h2 class="text-2xl font-bold text-slate-900">Chào mừng trở lại</h2>
+                    <p class="text-slate-500 mt-2 text-sm">Vui lòng đăng nhập để truy cập Workspace</p>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
-                    <input type="password" id="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Email làm việc</label>
+                        <input type="email" id="email" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="admin@congty.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Mật khẩu</label>
+                        <input type="password" id="password" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="••••••••">
+                    </div>
+                    
+                    <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-blue-600/20 transition-all active:scale-[0.98] mt-2">Đăng nhập</button>
+                    
+                    <div class="relative flex items-center py-4">
+                        <div class="flex-grow border-t border-slate-200"></div>
+                        <span class="flex-shrink-0 mx-4 text-slate-400 text-xs font-medium uppercase tracking-wider">Hoặc</span>
+                        <div class="flex-grow border-t border-slate-200"></div>
+                    </div>
+                    
+                    <button onclick="register()" class="w-full bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 font-semibold py-3.5 rounded-xl transition-all active:scale-[0.98]">Đăng ký trải nghiệm</button>
+                    <p id="auth_err" class="text-red-500 text-sm text-center mt-4 hidden p-3 bg-red-50 rounded-lg border border-red-100"></p>
                 </div>
-                <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors">Đăng nhập</button>
-                <div class="relative flex items-center py-4">
-                    <div class="flex-grow border-t border-gray-300"></div>
-                    <span class="flex-shrink-0 mx-4 text-gray-400 text-sm">Hoặc</span>
-                    <div class="flex-grow border-t border-gray-300"></div>
-                </div>
-                <button onclick="register()" class="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2.5 rounded-lg transition-colors">Đăng ký tài khoản mới</button>
-                <p id="auth_err" class="text-red-500 text-sm text-center mt-2 hidden"></p>
             </div>
         </div>
     </div>
 
-    
     <!-- Billing Modal -->
-    <div id="billing_modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-[100] hidden flex items-center justify-center">
-        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg border border-gray-100">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-gray-900">Nạp Tokens (Tín dụng AI)</h2>
-                <button onclick="document.getElementById('billing_modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+    <div id="billing_modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center transition-opacity">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-xl border border-slate-100 transform transition-transform">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Nạp Tín dụng AI</h2>
+                    <p class="text-sm text-slate-500 mt-1">Nâng cấp không giới hạn sức mạnh AI của bạn</p>
+                </div>
+                <button onclick="document.getElementById('billing_modal').classList.add('hidden')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             
-            <div class="space-y-4">
+            <div class="space-y-6">
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="border-2 border-blue-500 bg-blue-50 p-4 rounded-lg cursor-pointer relative">
-                        <div class="absolute -top-3 -right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow">Phổ biến</div>
-                        <div class="text-blue-700 font-bold text-lg">Gói Pro</div>
-                        <div class="text-3xl font-black text-gray-900 my-2">500K <span class="text-sm text-gray-500 font-normal">VNĐ</span></div>
-                        <div class="text-sm text-gray-600 font-medium">1.000.000 Tokens</div>
+                    <div class="border-2 border-blue-500 bg-blue-50/50 p-5 rounded-2xl cursor-pointer relative shadow-sm">
+                        <div class="absolute -top-3 -right-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-white">Phổ biến</div>
+                        <div class="text-blue-700 font-bold text-lg">Gói Doanh Nghiệp</div>
+                        <div class="text-3xl font-black text-slate-900 my-2">500K <span class="text-sm text-slate-500 font-medium">VNĐ</span></div>
+                        <div class="text-sm text-blue-600/80 font-semibold flex items-center gap-1">1.000.000 Tokens</div>
                     </div>
-                    <div class="border border-gray-200 hover:border-blue-300 p-4 rounded-lg cursor-pointer">
-                        <div class="text-gray-700 font-bold text-lg">Gói Khởi Động</div>
-                        <div class="text-3xl font-black text-gray-900 my-2">200K <span class="text-sm text-gray-500 font-normal">VNĐ</span></div>
-                        <div class="text-sm text-gray-600 font-medium">350.000 Tokens</div>
+                    <div class="border border-slate-200 p-5 rounded-2xl cursor-pointer">
+                        <div class="text-slate-700 font-bold text-lg">Gói Khởi Động</div>
+                        <div class="text-3xl font-black text-slate-900 my-2">200K <span class="text-sm text-slate-500 font-medium">VNĐ</span></div>
+                        <div class="text-sm text-slate-500 font-medium flex items-center gap-1">350.000 Tokens</div>
                     </div>
                 </div>
                 
-                <div class="bg-gray-50 p-4 rounded border border-gray-200 mt-6 text-center">
-                    <p class="text-sm text-gray-600 mb-4">Vui lòng chuyển khoản với nội dung: <strong class="text-blue-600" id="transfer_memo">NAP_AI</strong></p>
-                    <img src="https://api.vietqr.io/image/970415-113366668888-zHk5tE3.jpg?accountName=ADMIN&amount=500000&addInfo=NAP_AI" alt="QR Code" class="w-48 h-48 mx-auto rounded shadow-sm border border-gray-300">
-                    <p class="text-xs text-gray-400 mt-3">Hệ thống sẽ tự động cộng Token vào tài khoản của bạn trong vòng 1-3 phút sau khi nhận được thanh toán.</p>
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 mt-6 flex gap-6 items-center">
+                    <img src="https://api.vietqr.io/image/970415-113366668888-zHk5tE3.jpg?accountName=ADMIN&amount=500000&addInfo=NAP_AI" alt="QR Code" class="w-40 h-40 rounded-xl shadow-md border border-white">
+                    <div>
+                        <h4 class="font-bold text-slate-800 mb-2">Thanh toán chuyển khoản</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed mb-4">Mở ứng dụng ngân hàng và chuyển khoản với nội dung: <br><strong class="text-blue-600 bg-blue-50 px-2 py-1 rounded inline-block mt-1 border border-blue-100 select-all" id="transfer_memo">NAP_AI</strong></p>
+                        <p class="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Tự động cộng tiền trong 1 phút</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Main App -->
-    <div id="main_app" class="flex w-full h-full hidden">
-        
+    <div id="main_app" class="flex w-full h-full hidden bg-white">
         <!-- Sidebar -->
-        <div class="w-64 bg-gray-900 text-white flex flex-col shrink-0">
-            <div class="p-4 border-b border-gray-800 flex items-center gap-3">
-                <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center font-bold">AI</div>
-                <span class="font-semibold tracking-wide">SaaS Workspace</span>
+        <div class="w-[280px] bg-[#0f172a] text-slate-300 flex flex-col shrink-0 border-r border-slate-800 relative z-20">
+            <div class="h-16 px-6 border-b border-slate-800/60 flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <span class="font-bold text-white tracking-wide text-lg">OmniAI</span>
             </div>
             
             <div class="p-4 flex-1 flex flex-col h-full overflow-hidden">
-                <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">AI Của Bạn</div>
-                <div id="domain_list" class="space-y-1 mb-4 flex-1 overflow-y-auto">
-                    <!-- Domains rendered here -->
-                </div>
-                
-                <button onclick="createNew()" class="w-full py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded border border-gray-700 text-sm flex items-center justify-center gap-2 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    Tạo AI mới
-                </button>
+                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4 px-2">Danh sách Bot AI</div>
+                <div id="domain_list" class="space-y-1 mb-4 flex-1 overflow-y-auto custom-scroll px-2"></div>
+                <button onclick="createNew()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-sm">Tạo AI Mới</button>
             </div>
             
-            <div class="p-4 border-t border-gray-800 shrink-0">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            <div class="p-4 border-t border-slate-800/60 shrink-0 bg-slate-900/50">
+                <div class="flex items-center gap-3 mb-4 px-2">
+                    <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <div class="text-sm font-medium truncate" id="user_email">user@email.com</div>
-                        <div class="text-xs text-gray-500">Plan: Pro</div>
+                        <div class="text-sm font-semibold text-white truncate" id="user_email">user@email.com</div>
+                        <div class="text-xs text-slate-400 mt-0.5">Admin Workspace</div>
                     </div>
                 </div>
-                <button onclick="logout()" class="w-full py-1.5 text-xs text-gray-400 hover:text-white border border-gray-700 rounded transition-colors">Đăng xuất</button>
+                <button onclick="logout()" class="w-full py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-700">Đăng xuất</button>
             </div>
         </div>
 
         <!-- Working Area -->
-        <div class="flex-1 flex flex-col bg-gray-50 relative">
-            <div id="no_selection" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
-                <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                <h2 class="text-xl font-medium text-gray-500">Chọn một AI để quản lý</h2>
-                <button onclick="window.location.href='/'" class="mt-4 text-blue-500 hover:underline">Về giao diện cũ (Admin.html)</button>
-            </div>
-            
-            <!-- Navbar -->
-            <header class="bg-white border-b border-gray-200 h-16 flex items-center px-6 justify-between shrink-0">
-                <div class="flex items-center gap-4">
-                    <h2 class="text-xl font-bold text-gray-900" id="current_ai_name">Domain Name</h2>
-                    <span class="px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">Hoạt động</span>
+        <div class="flex-1 flex flex-col bg-slate-50 relative min-w-0">
+            <!-- No Selection State -->
+            <div id="no_selection" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 z-10">
+                <div class="w-24 h-24 bg-white rounded-full shadow-sm border border-slate-100 flex items-center justify-center mb-6">
+                    <svg class="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                 </div>
-                <div class="flex items-center gap-6">
-                    <div class="flex items-center gap-3">
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm text-gray-500">Tokens:</span>
-                            <span class="font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full" id="token_count">0</span>
-                        </div>
-                        <button onclick="showBilling()" class="px-3 py-1.5 text-xs font-medium text-white bg-green-500 hover:bg-green-600 rounded shadow-sm transition-colors flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                            Nạp
-                        </button>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Chào mừng đến với OmniAI</h2>
+                <p class="text-slate-500 max-w-md text-center">Vui lòng chọn một Bot AI hoặc tạo mới để bắt đầu thiết lập kịch bản.</p>
+            </div>
+
+            <!-- Header -->
+            <header class="bg-white border-b border-slate-200 h-16 flex items-center px-8 justify-between shrink-0 shadow-sm relative z-10">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-xl font-bold text-slate-800" id="current_ai_name">Domain Name</h2>
+                    <span class="px-2.5 py-1 rounded-md bg-green-50 text-green-600 text-xs font-bold uppercase tracking-wide border border-green-200">Đang chạy</span>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 bg-slate-50 px-4 py-1.5 rounded-full border border-slate-200">
+                        <span class="text-sm text-slate-600 font-medium">Tokens:</span>
+                        <span class="font-bold text-slate-900" id="token_count">0</span>
                     </div>
+                    <button onclick="showBilling()" class="px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-lg shadow-md shadow-blue-500/30 transition-all flex items-center gap-2">Nạp Tín Dụng</button>
                 </div>
             </header>
 
-            <!-- SaaS Navigation -->
-            <!-- SaaS Navigation -->
-            <div class="bg-white border-b border-gray-200 px-6 flex gap-6 shrink-0">
-                <button onclick="switchView('inbox')" id="btn-view-inbox" class="saas-nav active px-1 py-3 text-sm font-medium text-blue-600 border-b-2 border-blue-600 transition-colors">Hộp thư (Inbox)</button>
-                <button onclick="switchView('knowledge')" id="btn-view-knowledge" class="saas-nav px-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Kiến thức AI</button>
-                <button onclick="switchView('channels')" id="btn-view-channels" class="saas-nav px-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Đa kênh</button>
-                <button onclick="switchView('settings')" id="btn-view-settings" class="saas-nav px-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Cài đặt chung</button>
+            <!-- Navigation Tabs -->
+            <div class="bg-white border-b border-slate-200 px-8 flex gap-2 shrink-0">
+                <button onclick="switchView('inbox')" id="btn-view-inbox" class="saas-nav active px-4 py-3.5 text-sm font-medium text-slate-500 hover:text-slate-800 rounded-t-lg transition-colors flex items-center gap-2">Hộp Thư (Inbox)</button>
+                <button onclick="switchView('knowledge')" id="btn-view-knowledge" class="saas-nav px-4 py-3.5 text-sm font-medium text-slate-500 hover:text-slate-800 rounded-t-lg transition-colors flex items-center gap-2">Dữ Liệu Đào Tạo</button>
+                <button onclick="switchView('channels')" id="btn-view-channels" class="saas-nav px-4 py-3.5 text-sm font-medium text-slate-500 hover:text-slate-800 rounded-t-lg transition-colors flex items-center gap-2">Tích Hợp Kênh</button>
+                <button onclick="switchView('settings')" id="btn-view-settings" class="saas-nav px-4 py-3.5 text-sm font-medium text-slate-500 hover:text-slate-800 rounded-t-lg transition-colors flex items-center gap-2">Cấu Hình Chung</button>
             </div>
 
-            <!-- View: Inbox -->
+            <!-- VIEW: INBOX -->
             <div id="view-inbox" class="saas-view flex-1 flex overflow-hidden">
-                <div class="w-1/3 bg-white border-r border-gray-200 flex flex-col">
-                    <div class="p-3 border-b border-gray-100 bg-gray-50 flex gap-2">
-                        <input type="text" placeholder="Tìm kiếm tin nhắn..." class="flex-1 px-3 py-1.5 text-sm bg-white border border-gray-300 rounded focus:outline-none focus:border-blue-500">
-                        <button onclick="loadInbox()" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded border border-blue-100 hover:bg-blue-100 transition-colors" title="Làm mới">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        </button>
+                <div class="w-[320px] bg-white border-r border-slate-200 flex flex-col shrink-0">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex gap-2 items-center">
+                        <input type="text" placeholder="Tìm đoạn chat..." class="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm">
+                        <button onclick="loadInbox()" class="p-2 bg-white text-slate-500 rounded-lg border border-slate-200 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm" title="Làm mới">↻</button>
                     </div>
-                    <div class="flex-1 overflow-y-auto inbox-scroll divide-y divide-gray-100" id="inbox_list">
-                        <!-- Rendered by JS -->
-                        <div class="p-4 text-center text-gray-500 text-sm mt-10">Đang tải...</div>
+                    <div class="flex-1 overflow-y-auto custom-scroll divide-y divide-slate-100" id="inbox_list">
+                        <div class="p-8 text-center flex flex-col items-center justify-center h-full text-slate-400">Đang tải dữ liệu...</div>
                     </div>
                 </div>
-                <div class="w-2/3 bg-gray-50 flex flex-col relative" id="chat_panel">
-                    <div class="flex-1 flex items-center justify-center text-gray-400 flex-col gap-2" id="chat_placeholder">
-                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                        <p>Chọn một cuộc hội thoại để xem chi tiết</p>
+                
+                <div class="flex-1 bg-slate-50 flex flex-col relative" id="chat_panel">
+                    <div class="flex-1 flex items-center justify-center flex-col gap-4" id="chat_placeholder">
+                        <p class="text-slate-500 font-medium">Chọn một cuộc hội thoại để xem chi tiết</p>
                     </div>
                     
-                    <!-- Active Chat -->
-                    <div id="chat_active" class="hidden flex-col h-full">
-                        <!-- Chat Header -->
-                        <div class="h-14 bg-white border-b border-gray-200 px-4 flex items-center justify-between shrink-0">
-                            <div class="font-medium text-gray-900 flex items-center gap-2">
-                                <span id="chat_user_name">Khách hàng</span>
-                                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded" id="chat_source_badge">Facebook</span>
-                            </div>
+                    <div id="chat_active" class="hidden flex-col h-full bg-white/80 backdrop-blur-sm">
+                        <div class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 shadow-sm z-10">
                             <div class="flex items-center gap-3">
-                                <span class="text-sm text-gray-600">Trạng thái AI:</span>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                  <input type="checkbox" id="ai_toggle" class="sr-only peer" onchange="toggleAI()">
-                                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                                  <span class="ml-2 text-sm font-medium text-gray-900" id="ai_status_text">Đang bật</span>
-                                </label>
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold border border-blue-200">K</div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800 leading-tight" id="chat_user_name">Khách hàng</h3>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200" id="chat_source_badge">Facebook</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Chế độ Bot</span>
+                                <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                                    <input type="checkbox" name="toggle" id="ai_toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-slate-300 appearance-none cursor-pointer transition-all duration-300 z-10" onchange="toggleAI()"/>
+                                    <label for="ai_toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer transition-colors duration-300"></label>
+                                </div>
+                                <span class="text-sm font-bold w-24 text-center" id="ai_status_text">Đang bật</span>
                             </div>
                         </div>
                         
-                        <!-- Chat Messages -->
-                        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="chat_messages">
-                            <!-- Messages rendered by JS -->
-                        </div>
+                        <div class="flex-1 overflow-y-auto custom-scroll p-6 space-y-6" id="chat_messages"></div>
                         
-                        <!-- Chat Input -->
-                        <div class="p-3 bg-white border-t border-gray-200">
-                            <div class="flex items-end gap-2">
-                                <textarea id="chat_input" rows="2" class="flex-1 resize-none border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Nhập tin nhắn để trả lời thay AI..."></textarea>
-                                <button onclick="sendAdminMessage()" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors h-[54px] flex items-center gap-2">
-                                    <span>Gửi</span>
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                                </button>
+                        <div class="p-4 bg-white border-t border-slate-200">
+                            <div class="flex items-end gap-3 max-w-4xl mx-auto">
+                                <textarea id="chat_input" rows="2" class="w-full resize-none bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 shadow-inner" placeholder="Nhập tin nhắn để tư vấn thủ công (AI sẽ tự động nhường quyền)..."></textarea>
+                                <button onclick="sendAdminMessage()" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors h-[46px] flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 mb-1">Gửi</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- View: Knowledge -->
-            <div id="view-knowledge" class="saas-view flex-1 p-8 hidden overflow-y-auto bg-gray-50">
-                <div class="max-w-4xl mx-auto space-y-6">
-                    
-                    <!-- Text Knowledge -->
-                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 class="text-lg font-bold text-gray-900">Văn bản nền tảng</h3>
-                                <p class="text-sm text-gray-500">Dán trực tiếp các quy định, bảng giá, mô tả sản phẩm vào đây.</p>
+
+            <!-- VIEW: KNOWLEDGE -->
+            <div id="view-knowledge" class="saas-view flex-1 p-8 hidden overflow-y-auto">
+                <div class="max-w-5xl mx-auto space-y-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
+                            <div class="p-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-800">Văn bản nền tảng</h3>
+                                    <p class="text-xs text-slate-500">Nhập quy định, bảng giá</p>
+                                </div>
+                                <button onclick="saveKnowledge()" id="btn_save_know" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 shadow-sm">Lưu Dữ Liệu</button>
                             </div>
-                            <button onclick="saveKnowledge()" id="btn_save_know" class="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors">Lưu Văn Bản</button>
-                        </div>
-                        <textarea id="know_text" rows="10" class="w-full px-4 py-3 border border-gray-300 rounded focus:border-blue-500 outline-none text-sm" placeholder="Nhập kiến thức cho AI..."></textarea>
-                    </div>
-                    
-                    <!-- File Uploads -->
-                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 class="text-lg font-bold text-gray-900">Tài liệu tải lên (PDF, DOCX, TXT)</h3>
-                                <p class="text-sm text-gray-500">Hệ thống sẽ tự động đọc và trích xuất nội dung từ các file này.</p>
-                            </div>
-                            <div>
-                                <input type="file" id="file_upload" class="hidden" accept=".txt,.pdf,.docx" onchange="uploadFile()">
-                                <button onclick="document.getElementById('file_upload').click()" class="px-4 py-1.5 bg-gray-800 text-white text-sm font-medium rounded hover:bg-gray-700 transition-colors flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                    Tải file lên
-                                </button>
+                            <div class="flex-1 p-4">
+                                <textarea id="know_text" class="w-full h-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:border-indigo-500 focus:bg-white outline-none text-sm resize-none custom-scroll" placeholder="Nhập nội dung vào đây..."></textarea>
                             </div>
                         </div>
                         
-                        <div class="bg-gray-50 rounded border border-gray-200 overflow-hidden">
-                            <ul id="file_list" class="divide-y divide-gray-200">
-                                <!-- Files rendered here -->
-                                <li class="p-4 text-center text-gray-500 text-sm">Chưa có file nào được tải lên.</li>
-                            </ul>
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
+                            <div class="p-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-800">Kho Tài Liệu File</h3>
+                                    <p class="text-xs text-slate-500">Hỗ trợ PDF, DOCX, TXT</p>
+                                </div>
+                                <div>
+                                    <input type="file" id="file_upload" class="hidden" accept=".txt,.pdf,.docx" onchange="uploadFile()">
+                                    <button onclick="document.getElementById('file_upload').click()" class="px-4 py-2 bg-slate-800 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 shadow-sm">Tải File Lên</button>
+                                </div>
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scroll p-4 bg-slate-50/50">
+                                <ul id="file_list" class="space-y-3"></ul>
+                            </div>
                         </div>
                     </div>
-                    
                 </div>
             </div>
-            
+
+            <!-- VIEW: CHANNELS -->
             <div id="view-channels" class="saas-view flex-1 p-8 hidden overflow-y-auto">
-                <div class="max-w-3xl mx-auto space-y-6">
-                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h3 class="text-lg font-bold text-gray-900 mb-1">Cấu hình Đa Kênh</h3>
-                        <p class="text-sm text-gray-500 mb-6">Kết nối trí tuệ nhân tạo của bạn với các kênh giao tiếp. Lịch sử chat từ các kênh này sẽ đổ chung về mục Inbox.</p>
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                        <div class="mb-8">
+                            <h3 class="text-2xl font-bold text-slate-900 mb-2">Trung tâm Tích hợp Đa Kênh</h3>
+                            <p class="text-slate-500">Kết nối AI Chatbot của bạn với Facebook, Telegram, Zalo và Website.</p>
+                        </div>
                         
-                        <div class="space-y-8">
-                            <!-- Facebook -->
-                            <div>
-                                <div class="flex items-center gap-3 mb-3">
-                                    <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white font-bold">F</div>
-                                    <h4 class="font-semibold text-gray-800">Facebook Messenger</h4>
-                                </div>
-                                <div class="pl-11 space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div class="border border-slate-200 rounded-xl p-5 bg-slate-50 hover:border-blue-300">
+                                <h4 class="font-bold text-slate-800 text-lg mb-4">Facebook Fanpage</h4>
+                                <div class="space-y-4">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Page Access Token</label>
-                                        <input type="password" id="conf_fb_token" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:border-blue-500 outline-none">
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Page Access Token</label>
+                                        <input type="password" id="conf_fb_token" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:border-blue-500 outline-none shadow-sm">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Webhook URL (Copy dán vào Meta App)</label>
-                                        <div class="bg-gray-100 p-2 rounded text-xs text-gray-800 font-mono select-all" id="fb_webhook_url"></div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Webhook URL</label>
+                                        <div class="bg-white border border-slate-200 p-2 rounded-lg text-[11px] text-slate-700 font-mono select-all shadow-inner overflow-hidden" id="fb_webhook_url"></div>
                                     </div>
                                 </div>
                             </div>
 
-                            <hr class="border-gray-100">
-
-                            <!-- Telegram -->
-                            <div>
-                                <div class="flex items-center gap-3 mb-3">
-                                    <div class="w-8 h-8 rounded bg-sky-500 flex items-center justify-center text-white font-bold">T</div>
-                                    <h4 class="font-semibold text-gray-800">Telegram Bot</h4>
-                                </div>
-                                <div class="pl-11 space-y-3">
+                            <div class="border border-slate-200 rounded-xl p-5 bg-slate-50 hover:border-sky-300">
+                                <h4 class="font-bold text-slate-800 text-lg mb-4">Telegram Bot</h4>
+                                <div class="space-y-4">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Bot Token (Lấy từ @BotFather)</label>
-                                        <input type="password" id="conf_tg_token" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:border-blue-500 outline-none">
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Bot Token</label>
+                                        <input type="password" id="conf_tg_token" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:border-sky-500 outline-none shadow-sm">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Webhook URL</label>
-                                        <div class="bg-gray-100 p-2 rounded text-xs text-gray-800 font-mono select-all" id="tg_webhook_url"></div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Webhook URL</label>
+                                        <div class="bg-white border border-slate-200 p-2 rounded-lg text-[11px] text-slate-700 font-mono select-all shadow-inner overflow-hidden" id="tg_webhook_url"></div>
                                     </div>
                                 </div>
                             </div>
                             
-                            <hr class="border-gray-100">
-
-                            <!-- Zalo OA -->
-                            <div>
-                                <div class="flex items-center gap-3 mb-3">
-                                    <div class="w-8 h-8 rounded bg-blue-500 flex items-center justify-center text-white font-bold">Z</div>
-                                    <h4 class="font-semibold text-gray-800">Zalo OA</h4>
+                            <div class="border border-slate-200 rounded-xl p-5 bg-slate-50 hover:border-blue-400">
+                                <h4 class="font-bold text-slate-800 text-lg mb-4">Zalo OA</h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">OA Access Token</label>
+                                        <input type="password" id="conf_zl_token" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:border-blue-500 outline-none shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Webhook URL</label>
+                                        <div class="bg-white border border-slate-200 p-2 rounded-lg text-[11px] text-slate-700 font-mono select-all shadow-inner overflow-hidden" id="zl_webhook_url"></div>
+                                    </div>
                                 </div>
-                                <div class="pl-11 space-y-3">
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">OA Access Token</label>
-                                        <input type="password" id="conf_zl_token" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:border-blue-500 outline-none">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Webhook URL</label>
-                                        <div class="bg-gray-100 p-2 rounded text-xs text-gray-800 font-mono select-all" id="zl_webhook_url"></div>
-                                    </div>
+                            </div>
+
+                            <div class="border border-slate-200 rounded-xl p-5 bg-slate-50 hover:border-emerald-400">
+                                <h4 class="font-bold text-slate-800 text-lg mb-4">Website Chat Widget</h4>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Mã nhúng HTML</label>
+                                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg text-[11px] text-emerald-400 font-mono select-all shadow-inner overflow-hidden" id="web_widget_code"></div>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="mt-8 pt-4 border-t border-gray-200 flex justify-end">
-                            <button onclick="saveChannels()" id="btn_save_channels" class="px-6 py-2 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition-colors">Lưu Cấu Hình</button>
+                        <div class="pt-6 border-t border-slate-200 flex justify-end">
+                            <button onclick="saveChannels()" id="btn_save_channels" class="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 shadow-lg">Lưu Tích Hợp Kênh</button>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- VIEW: SETTINGS -->
+            <div id="view-settings" class="saas-view flex-1 p-8 hidden overflow-y-auto">
+                <div class="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="mb-8 border-b border-slate-100 pb-6">
+                        <h3 class="text-2xl font-bold text-slate-900">Cấu hình Trí Tuệ Nhân Tạo</h3>
+                        <p class="text-slate-500">Tùy biến tính cách và phong cách trả lời của AI.</p>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Tên hiển thị của AI</label>
+                            <input type="text" id="set_display_name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-indigo-500 outline-none" placeholder="VD: Trợ lý bán hàng thông minh">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Lời chào mở đầu</label>
+                            <input type="text" id="set_greeting" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-indigo-500 outline-none" placeholder="Dạ em chào anh/chị, em có thể giúp gì cho mình ạ?">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Định hướng phong cách (System Persona)</label>
+                            <textarea id="set_persona" rows="5" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-indigo-500 outline-none" placeholder="Bạn là nhân viên tư vấn nhiệt tình, xưng hô dạ vâng..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Câu trả lời dự phòng (Fallback)</label>
+                            <input type="text" id="set_fallback" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-indigo-500 outline-none" placeholder="Xin lỗi, hiện tại hệ thống đang bận.">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-10 pt-6 border-t border-slate-200 flex justify-between items-center bg-slate-50 -mx-8 -mb-8 p-8 rounded-b-2xl">
+                        <button onclick="deleteCurrentAI()" class="text-sm text-red-600 hover:text-red-700 font-bold px-5 py-2.5 bg-red-50 hover:bg-red-100 rounded-xl border border-red-200">Xóa AI Vĩnh Viễn</button>
+                        <button onclick="saveSettings()" id="btn_save_settings" class="px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg">Lưu Thiết Lập Cốt Lõi</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script>
+<script>
+
         const firebaseConfig = {
             apiKey: "AIzaSyDoxBVP9PaesZwkylNfnWJPCRQemkiMsVM",
             authDomain: "ai-agent-d1d5e.firebaseapp.com",
@@ -877,6 +910,7 @@
             btn.classList.remove('text-gray-500');
             btn.classList.add('active', 'text-blue-600', 'border-b-2', 'border-blue-600');
         }
-    </script>
+    
+</script>
 </body>
 </html>
