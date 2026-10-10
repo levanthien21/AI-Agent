@@ -317,6 +317,36 @@ async def fb_webhook_receive(domain: str, request: Request, background_tasks: Ba
                     background_tasks.add_task(process_fb_message, domain, sender_id, {"text": text_content, "images": image_urls})
         return "EVENT_RECEIVED"
     raise HTTPException(status_code=404)
+
+class AdminMessage(BaseModel):
+    text: str
+
+@app.post("/api/domains/{name}/sessions/{session_id}/pause")
+def toggle_pause_session(name: str, session_id: str, body: dict, uid: str = Depends(admin)):
+    cfg = store.get_config(name)
+    paused_sessions = cfg.get("paused_sessions", [])
+    
+    should_pause = body.get("paused", True)
+    if should_pause and session_id not in paused_sessions:
+        paused_sessions.append(session_id)
+    elif not should_pause and session_id in paused_sessions:
+        paused_sessions.remove(session_id)
+        
+    store.update_config(name, {"paused_sessions": paused_sessions})
+    return {"paused": should_pause}
+
+@app.post("/api/domains/{name}/sessions/{session_id}/send")
+def admin_send_message(name: str, session_id: str, body: AdminMessage, uid: str = Depends(admin)):
+    # 1. Send to Facebook if it's a FB session
+    if session_id.startswith("fb_"):
+        fb_sender_id = session_id.replace("fb_", "")
+        send_fb_message(name, fb_sender_id, body.text)
+        
+    # 2. Save to history (mark source as admin)
+    store.save_chat_history(name, session_id, "", body.text, 0, source="admin", debug_log="Nhân viên tư vấn (Admin) gửi tin nhắn")
+    
+    return {"ok": True}
+
 @app.get("/api/debug/spss_check")
 def debug_spss():
     try:

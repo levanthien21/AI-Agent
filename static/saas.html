@@ -112,24 +112,59 @@
                 <button onclick="switchView('channels')" id="btn-view-channels" class="saas-nav px-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Đa kênh</button>
             </div>
 
-            <!-- View: Inbox (MOCKUP for now) -->
+            <!-- View: Inbox -->
             <div id="view-inbox" class="saas-view flex-1 flex overflow-hidden">
                 <div class="w-1/3 bg-white border-r border-gray-200 flex flex-col">
-                    <div class="p-3 border-b border-gray-100 bg-gray-50">
-                        <input type="text" placeholder="Tìm kiếm tin nhắn..." class="w-full px-3 py-1.5 text-sm bg-white border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+                    <div class="p-3 border-b border-gray-100 bg-gray-50 flex gap-2">
+                        <input type="text" placeholder="Tìm kiếm tin nhắn..." class="flex-1 px-3 py-1.5 text-sm bg-white border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+                        <button onclick="loadInbox()" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded border border-blue-100 hover:bg-blue-100 transition-colors" title="Làm mới">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        </button>
                     </div>
-                    <div class="flex-1 overflow-y-auto inbox-scroll divide-y divide-gray-100">
-                        <div class="p-4 text-center text-gray-500 text-sm mt-10">
-                            Tính năng Hộp thư hợp nhất đang được hoàn thiện ở Giai đoạn 2.
-                            <br><br>
-                            Vui lòng sử dụng Giao diện cũ để test Bot và nạp tài liệu.
-                        </div>
+                    <div class="flex-1 overflow-y-auto inbox-scroll divide-y divide-gray-100" id="inbox_list">
+                        <!-- Rendered by JS -->
+                        <div class="p-4 text-center text-gray-500 text-sm mt-10">Đang tải...</div>
                     </div>
                 </div>
-                <div class="w-2/3 bg-gray-50 flex flex-col">
-                    <div class="flex-1 flex items-center justify-center text-gray-400 flex-col gap-2">
+                <div class="w-2/3 bg-gray-50 flex flex-col relative" id="chat_panel">
+                    <div class="flex-1 flex items-center justify-center text-gray-400 flex-col gap-2" id="chat_placeholder">
                         <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                         <p>Chọn một cuộc hội thoại để xem chi tiết</p>
+                    </div>
+                    
+                    <!-- Active Chat -->
+                    <div id="chat_active" class="hidden flex-col h-full">
+                        <!-- Chat Header -->
+                        <div class="h-14 bg-white border-b border-gray-200 px-4 flex items-center justify-between shrink-0">
+                            <div class="font-medium text-gray-900 flex items-center gap-2">
+                                <span id="chat_user_name">Khách hàng</span>
+                                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded" id="chat_source_badge">Facebook</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm text-gray-600">Trạng thái AI:</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" id="ai_toggle" class="sr-only peer" onchange="toggleAI()">
+                                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                                  <span class="ml-2 text-sm font-medium text-gray-900" id="ai_status_text">Đang bật</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat Messages -->
+                        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="chat_messages">
+                            <!-- Messages rendered by JS -->
+                        </div>
+                        
+                        <!-- Chat Input -->
+                        <div class="p-3 bg-white border-t border-gray-200">
+                            <div class="flex items-end gap-2">
+                                <textarea id="chat_input" rows="2" class="flex-1 resize-none border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Nhập tin nhắn để trả lời thay AI..."></textarea>
+                                <button onclick="sendAdminMessage()" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors h-[54px] flex items-center gap-2">
+                                    <span>Gửi</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -265,7 +300,7 @@
             curDomain = name;
             $("no_selection").classList.add("hidden");
             $("current_ai_name").textContent = displayName;
-            loadDomains(); // refresh active state
+            loadDomains(); loadInbox();
             
             // fetch token info
             try {
@@ -287,6 +322,193 @@
                 alert("Lỗi: " + e.message);
             }
         }
+
+        
+        let allHistory = [];
+        let groupedSessions = {};
+        let activeSessionId = null;
+        let domainConfig = {};
+
+        async function loadInbox() {
+            if (!curDomain) return;
+            try {
+                // Fetch config to get paused status
+                const res = await api("/domains/" + curDomain);
+                domainConfig = res.config || {};
+                
+                // Fetch history
+                allHistory = await api(`/domains/${curDomain}/history?limit=100`);
+                groupedSessions = {};
+                
+                // Group by session_id
+                allHistory.forEach(item => {
+                    if (!item.session_id) return;
+                    if (!groupedSessions[item.session_id]) {
+                        groupedSessions[item.session_id] = {
+                            messages: [],
+                            source: item.source,
+                            lastTime: item.timestamp
+                        };
+                    }
+                    groupedSessions[item.session_id].messages.push(item);
+                });
+                
+                renderInboxList();
+                if (activeSessionId) renderActiveChat();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderInboxList() {
+            const list = $("inbox_list");
+            list.innerHTML = "";
+            const sessionIds = Object.keys(groupedSessions).sort((a, b) => {
+                return new Date(groupedSessions[b].lastTime) - new Date(groupedSessions[a].lastTime);
+            });
+            
+            if (sessionIds.length === 0) {
+                list.innerHTML = `<div class="p-4 text-center text-gray-500 text-sm mt-10">Chưa có cuộc hội thoại nào.</div>`;
+                return;
+            }
+            
+            sessionIds.forEach(sid => {
+                const session = groupedSessions[sid];
+                const msgList = session.messages;
+                // Since it's sorted DESC by timestamp from API, index 0 is the latest message
+                const latestMsg = msgList[0];
+                
+                const isActive = sid === activeSessionId;
+                
+                const div = document.createElement("div");
+                div.className = `p-4 cursor-pointer hover:bg-blue-50 transition-colors ${isActive ? 'bg-blue-50' : ''}`;
+                div.onclick = () => selectSession(sid);
+                
+                const time = latestMsg.timestamp ? new Date(latestMsg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+                const isPaused = (domainConfig.paused_sessions || []).includes(sid);
+                const pauseBadge = isPaused ? `<span class="text-[10px] bg-red-100 text-red-700 px-1 rounded ml-1">AI Đang tắt</span>` : '';
+                
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="font-medium text-sm text-gray-900 truncate">Khách hàng ${session.source === 'facebook' ? '(FB)' : '(Web)'} ${pauseBadge}</span>
+                        <span class="text-xs text-gray-500 shrink-0">${time}</span>
+                    </div>
+                    <div class="text-xs text-gray-500 truncate">
+                        ${latestMsg.question || '...'}
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function selectSession(sid) {
+            activeSessionId = sid;
+            $("chat_placeholder").classList.add("hidden");
+            $("chat_active").classList.remove("hidden");
+            $("chat_active").classList.add("flex");
+            renderInboxList(); // Update active state
+            renderActiveChat();
+        }
+
+        function renderActiveChat() {
+            if (!activeSessionId) return;
+            const session = groupedSessions[activeSessionId];
+            if (!session) return;
+            
+            $("chat_user_name").textContent = "Khách hàng " + activeSessionId.substring(0, 10) + "...";
+            $("chat_source_badge").textContent = session.source;
+            
+            const isPaused = (domainConfig.paused_sessions || []).includes(activeSessionId);
+            $("ai_toggle").checked = !isPaused;
+            $("ai_status_text").textContent = isPaused ? "Người thật chat" : "AI đang bật";
+            if (isPaused) {
+                $("ai_status_text").classList.replace("text-gray-900", "text-red-600");
+            } else {
+                $("ai_status_text").classList.replace("text-red-600", "text-gray-900");
+            }
+            
+            const chatBox = $("chat_messages");
+            chatBox.innerHTML = "";
+            
+            // Messages are DESC in the array, so we reverse them to render ASC (top to bottom)
+            const msgs = [...session.messages].reverse();
+            
+            msgs.forEach(m => {
+                if (m.question) {
+                    const qDiv = document.createElement("div");
+                    qDiv.className = "flex justify-start mb-4";
+                    qDiv.innerHTML = `<div class="bg-white border border-gray-200 text-gray-800 px-4 py-2 rounded-2xl rounded-tl-sm max-w-[80%] text-sm whitespace-pre-wrap shadow-sm">${m.question}</div>`;
+                    chatBox.appendChild(qDiv);
+                }
+                
+                if (m.answer) {
+                    const aDiv = document.createElement("div");
+                    aDiv.className = "flex justify-end mb-4";
+                    const isManual = m.source === 'admin';
+                    const bg = isManual ? "bg-green-600 text-white" : "bg-blue-600 text-white";
+                    const label = isManual ? `<div class="text-[10px] text-gray-400 mb-1 text-right">Nhân viên trả lời</div>` : `<div class="text-[10px] text-gray-400 mb-1 text-right">AI trả lời</div>`;
+                    aDiv.innerHTML = `<div>${label}<div class="${bg} px-4 py-2 rounded-2xl rounded-tr-sm max-w-[80%] ml-auto text-sm whitespace-pre-wrap shadow-sm">${m.answer}</div></div>`;
+                    chatBox.appendChild(aDiv);
+                }
+            });
+            
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function toggleAI() {
+            if (!activeSessionId || !curDomain) return;
+            const isChecked = $("ai_toggle").checked;
+            const shouldPause = !isChecked; // If checked=false, we pause AI
+            try {
+                await api(`/domains/${curDomain}/sessions/${activeSessionId}/pause`, {
+                    method: "POST",
+                    body: JSON.stringify({ paused: shouldPause })
+                });
+                loadInbox(); // Reload config and history
+            } catch (e) {
+                alert("Lỗi: " + e.message);
+                $("ai_toggle").checked = !isChecked; // Revert
+            }
+        }
+
+        async function sendAdminMessage() {
+            if (!activeSessionId || !curDomain) return;
+            const text = $("chat_input").value.trim();
+            if (!text) return;
+            
+            // Immediately pause AI if it's not paused
+            const isPaused = (domainConfig.paused_sessions || []).includes(activeSessionId);
+            if (!isPaused) {
+                $("ai_toggle").checked = false;
+                await toggleAI();
+            }
+            
+            const btn = event.currentTarget;
+            btn.disabled = true;
+            btn.classList.add("opacity-50");
+            
+            try {
+                await api(`/domains/${curDomain}/sessions/${activeSessionId}/send`, {
+                    method: "POST",
+                    body: JSON.stringify({ text: text })
+                });
+                $("chat_input").value = "";
+                await loadInbox();
+            } catch (e) {
+                alert("Lỗi gửi tin: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove("opacity-50");
+            }
+        }
+
+        // Auto poll inbox if active
+        setInterval(() => {
+            const inboxView = $("view-inbox");
+            if (inboxView && !inboxView.classList.contains("hidden") && curDomain) {
+                loadInbox();
+            }
+        }, 5000);
 
         function switchView(viewId) {
             document.querySelectorAll('.saas-view').forEach(e => e.classList.add('hidden'));

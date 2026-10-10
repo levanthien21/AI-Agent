@@ -20,6 +20,21 @@ def _system_prompt(cfg: dict) -> str:
 def reply(domain: str, session_id: str, message_data) -> dict:
     t0 = time.time()
     cfg = store.get_config(domain)
+    
+    if session_id in cfg.get("paused_sessions", []):
+        text_content = ""
+        if isinstance(message_data, dict):
+            text_content = message_data.get("text", "")
+        else:
+            text_content = str(message_data)
+        store.save_chat_history(domain, session_id, text_content if text_content else "[Hình ảnh]", "", 0, source="facebook" if "fb" in session_id else "web", debug_log="AI đã bị tắt (Chế độ Người thật can thiệp)")
+        
+        # update history array too so context isn't lost
+        _sessions[(domain, session_id)].append({"role": "user", "text": text_content if text_content else "[Hình ảnh]"})
+        del _sessions[(domain, session_id)][: -config.HISTORY_TURNS * 2]
+        
+        return {"answer": "", "sources": [], "paused": True}
+        
     tokens_left = cfg.get("tokens", 0)
     if tokens_left <= 0:
         return {"answer": "H? th?ng AI dang t?m ngung do h?t h?n m?c (tokens). Vui lng lin h? qu?n tr? vin d? n?p thm.", "sources": []}
@@ -98,6 +113,11 @@ def reset(domain: str, session_id: str) -> None:
 def reply_stream(domain: str, session_id: str, message: str):
     t0 = time.time()
     cfg = store.get_config(domain)
+    
+    if session_id in cfg.get("paused_sessions", []):
+        yield ""
+        return
+        
     tokens_left = cfg.get("tokens", 0)
     if tokens_left <= 0:
         yield "H? th?ng AI dang t?m ngung do h?t h?n m?c (tokens). Vui lng lin h? qu?n tr? vin d? n?p thm."
