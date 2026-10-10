@@ -286,7 +286,8 @@ def debug_spss():
         names = [d["name"] for d in domains]
         return {"names": names}
     except Exception as e:
-        return {"error": str(e)}\n
+        return {"error": str(e)}
+
 @app.get("/api/debug/all_domains")
 def debug_all():
     try:
