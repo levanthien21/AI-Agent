@@ -266,6 +266,51 @@ def send_fb_message(domain: str, sender_id: str, text: str):
     except Exception as e:
         print(f"L?i g?i tin nh?n FB: {e}")
 
+def send_telegram_message(domain: str, chat_id: str, text: str):
+    cfg = store.get_config(domain)
+    token = cfg.get("telegram_token")
+    if not token: return
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    data = {"chat_id": chat_id, "text": text}
+    req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers={"Content-Type": "application/json"}, method='POST')
+    try:
+        with urllib.request.urlopen(req): pass
+    except Exception as e:
+        print(f"Lỗi gửi Telegram: {e}")
+
+def process_telegram_message(domain: str, chat_id: str, message: str):
+    try:
+        store.save_chat_history(domain, "tg_" + chat_id, message, "", 0, source="telegram", debug_log="Đã nhận tin nhắn Telegram")
+        res = agent.reply(domain, "tg_" + chat_id, message)
+        if res.get("paused"): return
+        answer = res.get("answer", "Xin lỗi, hệ thống đang bận.")
+        send_telegram_message(domain, chat_id, answer)
+    except Exception as e:
+        print("Lỗi Telegram processing:", e)
+
+def send_zalo_message(domain: str, user_id: str, text: str):
+    cfg = store.get_config(domain)
+    token = cfg.get("zalo_oa_token")
+    if not token: return
+    url = "https://openapi.zalo.me/v3.0/oa/message/cs"
+    headers = {"Content-Type": "application/json", "access_token": token}
+    data = {"recipient": {"user_id": user_id}, "message": {"text": text}}
+    req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers=headers, method='POST')
+    try:
+        with urllib.request.urlopen(req): pass
+    except Exception as e:
+        print(f"Lỗi gửi Zalo: {e}")
+
+def process_zalo_message(domain: str, user_id: str, message: str):
+    try:
+        store.save_chat_history(domain, "zl_" + user_id, message, "", 0, source="zalo", debug_log="Đã nhận tin nhắn Zalo")
+        res = agent.reply(domain, "zl_" + user_id, message)
+        if res.get("paused"): return
+        answer = res.get("answer", "Xin lỗi, hệ thống đang bận.")
+        send_zalo_message(domain, user_id, answer)
+    except Exception as e:
+        print("Lỗi Zalo processing:", e)
+
 def process_fb_message(domain: str, sender_id: str, message_data):
     try:
         res = agent.reply(domain, "fb_" + sender_id, message_data)
@@ -337,15 +382,46 @@ def toggle_pause_session(name: str, session_id: str, body: dict, uid: str = Depe
 
 @app.post("/api/domains/{name}/sessions/{session_id}/send")
 def admin_send_message(name: str, session_id: str, body: AdminMessage, uid: str = Depends(admin)):
-    # 1. Send to Facebook if it's a FB session
+    # 1. Send to correct channel
     if session_id.startswith("fb_"):
-        fb_sender_id = session_id.replace("fb_", "")
-        send_fb_message(name, fb_sender_id, body.text)
+        send_fb_message(name, session_id.replace("fb_", ""), body.text)
+    elif session_id.startswith("tg_"):
+        send_telegram_message(name, session_id.replace("tg_", ""), body.text)
+    elif session_id.startswith("zl_"):
+        send_zalo_message(name, session_id.replace("zl_", ""), body.text)
         
     # 2. Save to history (mark source as admin)
     store.save_chat_history(name, session_id, "", body.text, 0, source="admin", debug_log="Nhân viên tư vấn (Admin) gửi tin nhắn")
     
     return {"ok": True}
+
+
+@app.post("/api/webhook/telegram/{domain}")
+async def telegram_webhook(domain: str, request: Request, background_tasks: BackgroundTasks):
+    try:
+        body = await request.json()
+        if "message" in body:
+            chat_id = str(body["message"]["chat"]["id"])
+            text = body["message"].get("text", "")
+            if text:
+                background_tasks.add_task(process_telegram_message, domain, chat_id, text)
+        return {"ok": True}
+    except Exception:
+        return {"ok": False}
+
+@app.post("/api/webhook/zalo/{domain}")
+async def zalo_webhook(domain: str, request: Request, background_tasks: BackgroundTasks):
+    try:
+        body = await request.json()
+        event_name = body.get("event_name")
+        if event_name == "user_send_text":
+            user_id = body.get("sender", {}).get("id")
+            text = body.get("message", {}).get("text", "")
+            if user_id and text:
+                background_tasks.add_task(process_zalo_message, domain, user_id, text)
+        return {"ok": True}
+    except Exception:
+        return {"ok": False}
 
 @app.get("/api/debug/spss_check")
 def debug_spss():

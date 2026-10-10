@@ -178,25 +178,73 @@
             </div>
             
             <div id="view-channels" class="saas-view flex-1 p-8 hidden overflow-y-auto">
-                <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center">
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Đa nền tảng (Omnichannel)</h3>
-                    <p class="text-gray-500 text-sm mb-6">Kết nối AI của bạn với các kênh giao tiếp phổ biến nhất.</p>
-                    <div class="grid grid-cols-2 gap-4 text-left">
-                        <div class="border border-blue-200 bg-blue-50 p-4 rounded flex items-center justify-between">
-                            <span class="font-bold text-blue-700">Facebook Messenger</span>
-                            <span class="px-2 py-1 bg-blue-600 text-white text-xs rounded">Đã kết nối</span>
+                <div class="max-w-3xl mx-auto space-y-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <h3 class="text-lg font-bold text-gray-900 mb-1">Cấu hình Đa Kênh</h3>
+                        <p class="text-sm text-gray-500 mb-6">Kết nối trí tuệ nhân tạo của bạn với các kênh giao tiếp. Lịch sử chat từ các kênh này sẽ đổ chung về mục Inbox.</p>
+                        
+                        <div class="space-y-8">
+                            <!-- Facebook -->
+                            <div>
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white font-bold">F</div>
+                                    <h4 class="font-semibold text-gray-800">Facebook Messenger</h4>
+                                </div>
+                                <div class="pl-11 space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Page Access Token</label>
+                                        <input type="password" id="conf_fb_token" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:border-blue-500 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Webhook URL (Copy dán vào Meta App)</label>
+                                        <div class="bg-gray-100 p-2 rounded text-xs text-gray-800 font-mono select-all" id="fb_webhook_url"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="border-gray-100">
+
+                            <!-- Telegram -->
+                            <div>
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-8 h-8 rounded bg-sky-500 flex items-center justify-center text-white font-bold">T</div>
+                                    <h4 class="font-semibold text-gray-800">Telegram Bot</h4>
+                                </div>
+                                <div class="pl-11 space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Bot Token (Lấy từ @BotFather)</label>
+                                        <input type="password" id="conf_tg_token" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:border-blue-500 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Webhook URL</label>
+                                        <div class="bg-gray-100 p-2 rounded text-xs text-gray-800 font-mono select-all" id="tg_webhook_url"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="border-gray-100">
+
+                            <!-- Zalo OA -->
+                            <div>
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-8 h-8 rounded bg-blue-500 flex items-center justify-center text-white font-bold">Z</div>
+                                    <h4 class="font-semibold text-gray-800">Zalo OA</h4>
+                                </div>
+                                <div class="pl-11 space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">OA Access Token</label>
+                                        <input type="password" id="conf_zl_token" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:border-blue-500 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Webhook URL</label>
+                                        <div class="bg-gray-100 p-2 rounded text-xs text-gray-800 font-mono select-all" id="zl_webhook_url"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="border border-gray-200 p-4 rounded flex items-center justify-between opacity-50 cursor-not-allowed">
-                            <span class="font-bold text-gray-700">Zalo OA</span>
-                            <span class="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded">Sắp ra mắt</span>
-                        </div>
-                        <div class="border border-gray-200 p-4 rounded flex items-center justify-between opacity-50 cursor-not-allowed">
-                            <span class="font-bold text-gray-700">Telegram Bot</span>
-                            <span class="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded">Sắp ra mắt</span>
-                        </div>
-                        <div class="border border-gray-200 p-4 rounded flex items-center justify-between opacity-50 cursor-not-allowed">
-                            <span class="font-bold text-gray-700">Website Widget</span>
-                            <span class="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded">Sắp ra mắt</span>
+                        
+                        <div class="mt-8 pt-4 border-t border-gray-200 flex justify-end">
+                            <button onclick="saveChannels()" id="btn_save_channels" class="px-6 py-2 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition-colors">Lưu Cấu Hình</button>
                         </div>
                     </div>
                 </div>
@@ -510,6 +558,51 @@
             }
         }, 5000);
 
+        
+        function updateWebhooks() {
+            const host = window.location.origin;
+            $("fb_webhook_url").textContent = `${host}/api/webhook/facebook/${encodeURIComponent(curDomain)}`;
+            $("tg_webhook_url").textContent = `${host}/api/webhook/telegram/${encodeURIComponent(curDomain)}`;
+            $("zl_webhook_url").textContent = `${host}/api/webhook/zalo/${encodeURIComponent(curDomain)}`;
+        }
+
+        async function loadChannelsConfig() {
+            if (!curDomain) return;
+            updateWebhooks();
+            try {
+                const res = await api("/domains/" + curDomain);
+                const cfg = res.config || {};
+                $("conf_fb_token").value = cfg.fb_page_token || "";
+                $("conf_tg_token").value = cfg.telegram_token || "";
+                $("conf_zl_token").value = cfg.zalo_oa_token || "";
+            } catch (e) {
+                console.error("Lỗi tải cấu hình kênh", e);
+            }
+        }
+
+        async function saveChannels() {
+            if (!curDomain) return;
+            const btn = $("btn_save_channels");
+            btn.textContent = "Đang lưu...";
+            btn.disabled = true;
+            try {
+                await api(`/domains/${curDomain}/config`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        fb_page_token: $("conf_fb_token").value.trim(),
+                        telegram_token: $("conf_tg_token").value.trim(),
+                        zalo_oa_token: $("conf_zl_token").value.trim()
+                    })
+                });
+                btn.textContent = "Đã lưu thành công!";
+                setTimeout(() => { btn.textContent = "Lưu Cấu Hình"; btn.disabled = false; }, 2000);
+            } catch (e) {
+                alert("Lỗi lưu cấu hình: " + e.message);
+                btn.textContent = "Lưu Cấu Hình";
+                btn.disabled = false;
+            }
+        }
+
         function switchView(viewId) {
             document.querySelectorAll('.saas-view').forEach(e => e.classList.add('hidden'));
             document.querySelectorAll('.saas-nav').forEach(e => {
@@ -518,6 +611,8 @@
             });
             
             document.getElementById('view-' + viewId).classList.remove('hidden');
+            if (viewId === 'channels') loadChannelsConfig();
+
             const btn = document.getElementById('btn-view-' + viewId);
             btn.classList.remove('text-gray-500');
             btn.classList.add('active', 'text-blue-600', 'border-b-2', 'border-blue-600');
