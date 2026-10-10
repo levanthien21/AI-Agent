@@ -295,7 +295,8 @@ def debug_all():
         return {"names": [d["name"] for d in domains], "configs": [store.get_config(d["name"]) for d in domains]}
     except Exception as e:
         return {"error": str(e)}
-\n
+
+
 @app.get("/api/domains/{domain}/history")
 def get_history(domain: str, limit: int = 50, _=Depends(admin)):
     try:

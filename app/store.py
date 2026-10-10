@@ -240,7 +240,7 @@ def get_main_knowledge(name: str) -> str:
     chunks, _ = _get_cache(name)
     main_texts = [c["text"] for c in chunks if c["source"] == "main-knowledge"]
     return "\n\n".join(main_texts)
-\n
+
 def save_chat_history(name: str, session_id: str, question: str, answer: str, tokens_used: int, source: str = "web"):
     try:
         doc_ref = db().collection("domains").document(name).collection("history").document()
