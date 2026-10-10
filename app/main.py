@@ -126,33 +126,33 @@ class TextIn(BaseModel):
     text: str
 
 
-@app.get("/api/domains", dependencies=[Depends(admin)])
-def domains():
+@app.get("/api/domains")
+def domains(uid: str = Depends(admin)):
     return store.list_domains(uid)
 
 
-@app.post("/api/domains", dependencies=[Depends(admin)])
-def create_domain(body: DomainIn):
+@app.post("/api/domains")
+def create_domain(body: DomainIn, uid: str = Depends(admin)):
     return store.create_domain(body.name, owner_uid=uid, **body.model_dump(exclude={"name"}))
 
 
-@app.get("/api/domains/{name}", dependencies=[Depends(admin)])
-def domain_detail(name: str):
+@app.get("/api/domains/{name}")
+def domain_detail(name: str, uid: str = Depends(admin)):
     return {"config": store.get_config(name), "sources": store.list_sources(name)}
 
 
-@app.put("/api/domains/{name}", dependencies=[Depends(admin)])
-def update_domain(name: str, body: DomainUpdate):
+@app.put("/api/domains/{name}")
+def update_domain(name: str, body: DomainUpdate, uid: str = Depends(admin)):
     return store.save_config(name, body.model_dump())
 
 
-@app.delete("/api/domains/{name}", dependencies=[Depends(admin)])
-def delete_domain(name: str):
+@app.delete("/api/domains/{name}")
+def delete_domain(name: str, uid: str = Depends(admin)):
     store.delete_domain(name)
     return {"ok": True}
 
 
-@app.post("/api/domains/{name}/upload", dependencies=[Depends(admin)])
+@app.post("/api/domains/{name}/upload")
 async def upload(name: str, file: UploadFile = File(...)):
     store.get_config(name)
     data = await file.read()
@@ -165,32 +165,32 @@ async def upload(name: str, file: UploadFile = File(...)):
     return {"source": file.filename, "chunks": n}
 
 
-@app.post("/api/domains/{name}/text", dependencies=[Depends(admin)])
-def add_text(name: str, body: TextIn):
+@app.post("/api/domains/{name}/text")
+def add_text(name: str, body: TextIn, uid: str = Depends(admin)):
     return {"chunks": ingest.ingest_text(name, body.source, body.text)}
 
 
-@app.delete("/api/domains/{name}/sources/{source:path}", dependencies=[Depends(admin)])
-def delete_source(name: str, source: str):
+@app.delete("/api/domains/{name}/sources/{source:path}")
+def delete_source(name: str, source: str, uid: str = Depends(admin)):
     return {"removed": store.delete_source(name, source)}
 
 class TokenIn(BaseModel):
     amount: int
 
-@app.post("/api/domains/{name}/tokens", dependencies=[Depends(admin)])
-def add_tokens(name: str, body: TokenIn):
+@app.post("/api/domains/{name}/tokens")
+def add_tokens(name: str, body: TokenIn, uid: str = Depends(admin)):
     new_balance = store.add_tokens(name, body.amount)
     return {"tokens": new_balance}
 
-@app.get("/api/domains/{name}/knowledge", dependencies=[Depends(admin)])
-def get_main_knowledge(name: str):
+@app.get("/api/domains/{name}/knowledge")
+def get_main_knowledge(name: str, uid: str = Depends(admin)):
     return {"text": store.get_main_knowledge(name)}
 
 class KnowledgeIn(BaseModel):
     text: str
 
-@app.put("/api/domains/{name}/knowledge", dependencies=[Depends(admin)])
-def set_main_knowledge(name: str, body: KnowledgeIn):
+@app.put("/api/domains/{name}/knowledge")
+def set_main_knowledge(name: str, body: KnowledgeIn, uid: str = Depends(admin)):
     # First delete existing main knowledge
     store.delete_source(name, "main-knowledge")
     # Add new if not empty
