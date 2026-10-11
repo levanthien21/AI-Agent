@@ -2,7 +2,7 @@
     // Determine Domain from script src
     const scripts = document.getElementsByTagName('script');
     let domainName = '';
-    let hostUrl = 'https://ai-agent-zeta-gules.vercel.app';
+    let hostUrl = 'https://luxa-ai.click';
     for (let i = 0; i < scripts.length; i++) {
         if (scripts[i].src.includes('widget.js')) {
             const url = new URL(scripts[i].src);
@@ -239,7 +239,7 @@
                     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
                 </button>
             </div>
-            <div class="omni-branding">Powered by <a href="https://ai-agent-zeta-gules.vercel.app" target="_blank">OmniAI</a></div>
+            <div class="omni-branding">Powered by <a href="https://luxa-ai.click" target="_blank">LUXA AI</a></div>
         </div>
 
         <button id="omni-launcher">
