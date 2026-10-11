@@ -1,15 +1,190 @@
-<!doctype html>
-<html lang="vi">
-<head><meta charset="utf-8"><title>Demo widget</title>
-<meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="font-family:system-ui;max-width:700px;margin:40px auto;padding:0 16px">
-  <h1>Trang web demo</h1>
-  <p>Bấm bong bóng chat ở góc phải dưới để thử. Đổi <code>?domain=ten</code> trên URL để thử lĩnh vực khác.</p>
-  <script>
-    var s = document.createElement("script");
-    s.src = "/static/widget.js";
-    s.setAttribute("data-domain", new URLSearchParams(location.search).get("domain") || "cua-hang-mau");
-    document.body.appendChild(s);
-  </script>
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUXA AI • Trải Nghiệm Chat Trực Tiếp</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 99px; }
+    </style>
+</head>
+<body class="bg-[#090d16] text-slate-100 h-screen flex flex-col justify-between overflow-hidden">
+
+    <!-- Top Header -->
+    <header class="h-16 border-b border-white/10 px-6 flex items-center justify-between bg-[#0f172a]/80 backdrop-blur-md shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand-500/25">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-sm font-bold tracking-tight text-white" id="demo_bot_name">LUXA AI Assistant</h1>
+                <p class="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Trực tuyến • Phản hồi 3s
+                </p>
+            </div>
+        </div>
+        <a href="/static/saas.html" class="text-xs font-bold px-3.5 py-1.5 bg-white/10 hover:bg-white/15 rounded-xl text-slate-300 transition">
+            Vào Trang Quản Trị →
+        </a>
+    </header>
+
+    <!-- Chat Messages Scroll Area -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 max-w-3xl w-full mx-auto space-y-4" id="chat_messages">
+        <!-- Messages will be injected here -->
+    </main>
+
+    <!-- Bottom Input Area with Chips -->
+    <footer class="p-4 md:p-6 bg-[#0f172a]/60 backdrop-blur-md border-t border-white/10 shrink-0">
+        <div class="max-w-3xl mx-auto space-y-3">
+            <!-- Chips -->
+            <div class="flex flex-wrap gap-2" id="demo_chips">
+                <button onclick="sendQuickPrompt('Tư vấn cho tôi về dịch vụ và bảng giá')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs text-slate-300 transition">
+                    💰 Báo giá dịch vụ
+                </button>
+                <button onclick="sendQuickPrompt('Những tính năng nổi bật nhất của bên bạn là gì?')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs text-slate-300 transition">
+                    ⚡ Tính năng nổi bật
+                </button>
+                <button onclick="sendQuickPrompt('Tôi muốn để lại số điện thoại để gặp tư vấn viên')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-xs text-slate-300 transition">
+                    📞 Gặp chuyên viên
+                </button>
+            </div>
+
+            <!-- Input Box -->
+            <div class="flex items-center gap-2 bg-[#161f33] border border-white/10 rounded-2xl p-2 focus-within:border-brand-500 transition">
+                <input type="text" id="user_input" placeholder="Nhập câu hỏi của bạn..." class="flex-1 px-4 py-2 bg-transparent text-sm text-white placeholder:text-slate-500 outline-none">
+                <button onclick="handleSend()" id="send_btn" class="w-10 h-10 rounded-xl bg-brand-500 hover:bg-brand-600 text-white flex items-center justify-center transition active:scale-95 shrink-0 shadow-md shadow-brand-500/25">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </div>
+            
+            <div class="text-center text-[11px] text-slate-500 font-medium">
+                Được vận hành bởi nền tảng <a href="https://www.luxa-ai.click" class="text-indigo-400 font-bold hover:underline">LUXA AI</a> • DeepSeek V3 Engine
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const domain = urlParams.get('id') || 'demo';
+        let sessionId = localStorage.getItem('demo_chat_session') || ('web_' + Math.random().toString(36).substr(2, 9));
+        localStorage.setItem('demo_chat_session', sessionId);
+
+        const messagesBox = document.getElementById('chat_messages');
+        const input = document.getElementById('user_input');
+        const sendBtn = document.getElementById('send_btn');
+
+        function appendMsg(text, isUser = false) {
+            const wrap = document.createElement('div');
+            wrap.className = isUser ? 'flex justify-end' : 'flex justify-start items-start gap-3';
+            
+            if (isUser) {
+                wrap.innerHTML = `
+                    <div class="max-w-[80%] bg-gradient-to-r from-brand-500 to-indigo-600 text-white p-3.5 px-4 rounded-2xl rounded-br-sm text-sm leading-relaxed shadow-md shadow-brand-500/10">
+                        ${text.replace(/</g, '&lt;')}
+                    </div>
+                `;
+            } else {
+                wrap.innerHTML = `
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-indigo-500 flex items-center justify-center text-white shrink-0 text-xs font-bold shadow-md shadow-brand-500/20">
+                        L
+                    </div>
+                    <div class="max-w-[80%] bg-[#111726] border border-white/10 text-slate-200 p-3.5 px-4 rounded-2xl rounded-tl-sm text-sm leading-relaxed shadow-sm">
+                        ${text.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+            }
+            messagesBox.appendChild(wrap);
+            messagesBox.scrollTop = messagesBox.scrollHeight;
+        }
+
+        async function initBot() {
+            try {
+                const res = await fetch(`/api/domains/${domain}/public`);
+                const data = await res.json();
+                if (data.display_name) document.getElementById('demo_bot_name').textContent = data.display_name;
+                appendMsg(data.greeting || "Xin chào quý khách! Em là Trợ lý AI của LUXA. Em có thể hỗ trợ thông tin gì cho mình hôm nay ạ? ✨");
+            } catch (e) {
+                appendMsg("Xin chào quý khách! Em có thể giúp gì cho mình hôm nay ạ? ✨");
+            }
+        }
+
+        async function handleSend() {
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            appendMsg(text, true);
+
+            // Typing indicator
+            const typingWrap = document.createElement('div');
+            typingWrap.className = 'flex justify-start items-start gap-3';
+            typingWrap.id = 'typing_indicator';
+            typingWrap.innerHTML = `
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-indigo-500 flex items-center justify-center text-white shrink-0 text-xs font-bold">
+                    L
+                </div>
+                <div class="bg-[#111726] border border-white/10 text-slate-400 p-3.5 px-4 rounded-2xl rounded-tl-sm text-xs flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
+                    <span class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay:0.15s"></span>
+                    <span class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay:0.3s"></span>
+                </div>
+            `;
+            messagesBox.appendChild(typingWrap);
+            messagesBox.scrollTop = messagesBox.scrollHeight;
+
+            sendBtn.disabled = true;
+            try {
+                const res = await fetch(`/api/widget/${domain}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sessionId, message: text })
+                });
+                const data = await res.json();
+                document.getElementById('typing_indicator')?.remove();
+                appendMsg(data.answer || "Dạ hiện tại hệ thống đang xử lý, anh/chị vui lòng để lại số điện thoại để được hỗ trợ ngay nhé!");
+            } catch (e) {
+                document.getElementById('typing_indicator')?.remove();
+                appendMsg("Lỗi kết nối máy chủ, vui lòng thử lại sau ít giây.");
+            }
+            sendBtn.disabled = false;
+            input.focus();
+        }
+
+        function sendQuickPrompt(promptText) {
+            input.value = promptText;
+            handleSend();
+        }
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+
+        window.addEventListener('DOMContentLoaded', initBot);
+    </script>
 </body>
 </html>
