@@ -706,14 +706,35 @@
             return res.json();
         }
 
+        function formatAuthError(code, defaultMsg) {
+            if (code === 'auth/invalid-login-credentials' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
+                return "Email hoặc mật khẩu không đúng. Nếu bạn chưa có tài khoản, vui lòng bấm 'Đăng ký trải nghiệm' ở bên dưới.";
+            }
+            if (code === 'auth/email-already-in-use') {
+                return "Email này đã được đăng ký từ trước. Vui lòng bấm 'Đăng nhập'.";
+            }
+            if (code === 'auth/weak-password') {
+                return "Mật khẩu quá ngắn (vui lòng nhập ít nhất 6 ký tự).";
+            }
+            if (code === 'auth/invalid-email') {
+                return "Định dạng email không hợp lệ.";
+            }
+            return defaultMsg;
+        }
+
         async function login() {
             try {
                 $("auth_err").classList.add("hidden");
                 const email = $("email").value.trim();
                 const password = $("password").value;
+                if (!email || !password) {
+                    $("auth_err").textContent = "Vui lòng nhập đầy đủ Email và Mật khẩu.";
+                    $("auth_err").classList.remove("hidden");
+                    return;
+                }
                 await auth.signInWithEmailAndPassword(email, password);
             } catch (error) {
-                $("auth_err").textContent = "Lỗi đăng nhập: " + error.message;
+                $("auth_err").textContent = formatAuthError(error.code, "Lỗi đăng nhập: " + error.message);
                 $("auth_err").classList.remove("hidden");
             }
         }
@@ -723,9 +744,14 @@
                 $("auth_err").classList.add("hidden");
                 const email = $("email").value.trim();
                 const password = $("password").value;
+                if (!email || !password) {
+                    $("auth_err").textContent = "Vui lòng nhập Email và Mật khẩu để đăng ký.";
+                    $("auth_err").classList.remove("hidden");
+                    return;
+                }
                 await auth.createUserWithEmailAndPassword(email, password);
             } catch (error) {
-                $("auth_err").textContent = "Lỗi đăng ký: " + error.message;
+                $("auth_err").textContent = formatAuthError(error.code, "Lỗi đăng ký: " + error.message);
                 $("auth_err").classList.remove("hidden");
             }
         }
