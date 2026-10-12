@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUXA AI • Demo Trang Khách Hàng (Live Preview)</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-[#090d16] text-slate-100 min-h-screen font-sans selection:bg-brand-500 selection:text-white overflow-x-hidden">
+
+    <!-- Top Announcement Bar -->
+    <div class="bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600 py-2.5 px-4 text-center text-xs font-semibold text-white tracking-wide flex items-center justify-center gap-2">
+        <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span>Trang mô phỏng Website thực tế của khách hàng • Nhìn xuống góc phải để thấy Bong bóng đón chào AI!</span>
+    </div>
+
+    <!-- Navigation Bar -->
+    <header class="border-b border-white/10 bg-[#0f172a]/70 backdrop-blur-xl sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-500 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/25">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <span class="text-xl font-extrabold tracking-tight text-white">LUXA<span class="text-brand-500">.AI</span></span>
+            </div>
+            
+            <nav class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-300">
+                <a href="#features" class="hover:text-white transition">Giải Pháp</a>
+                <a href="#benefits" class="hover:text-white transition">Lợi Ích</a>
+                <a href="#pricing" class="hover:text-white transition">Bảng Giá</a>
+                <a href="/static/saas.html" class="hover:text-brand-400 transition flex items-center gap-1.5">
+                    Trang Quản Trị Admin
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </a>
+            </nav>
+
+            <div class="flex items-center gap-3">
+                <a href="/static/saas.html" class="px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-lg shadow-brand-500/25 transition active:scale-95">
+                    Đăng Nhập Dashboard
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative pt-24 pb-32 px-6 overflow-hidden">
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-500/15 rounded-full blur-[140px] pointer-events-none"></div>
+
+        <div class="max-w-4xl mx-auto text-center relative z-10 space-y-8">
+            <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-indigo-300 backdrop-blur-md">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Trợ Lý AI Tự Động Hóa 24/7 Cho Doanh Nghiệp
+            </div>
+
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1]">
+                Biến Khách Truy Cập Thành <br>
+                <span class="bg-gradient-to-r from-brand-500 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">Doanh Số Thực Tế</span>
+            </h1>
+
+            <p class="text-slate-300 text-lg md:text-xl max-w-2xl mx-auto font-normal leading-relaxed">
+                Tự động đón tiếp, tư vấn chuyên sâu theo dữ liệu doanh nghiệp và thu thập số điện thoại khách hàng trong tích tắc mà không cần nhân viên trực đêm.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                <div class="p-4 rounded-2xl bg-white/5 border border-white/10 text-sm text-slate-300 flex items-center gap-3">
+                    <span class="text-2xl">👉</span>
+                    <span>Hãy nhìn vào <strong>góc dưới bên phải màn hình</strong> của bạn để trải nghiệm <strong>Bong bóng đón chào & Nút chat AI phát sáng!</strong></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Bento Grid -->
+    <section id="features" class="py-20 px-6 border-t border-white/10 bg-[#0c1222]/50">
+        <div class="max-w-6xl mx-auto space-y-12">
+            <div class="text-center space-y-3">
+                <h2 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Sức Mạnh Vượt Trội Của LUXA AI</h2>
+                <p class="text-sm text-slate-400 max-w-xl mx-auto">Trải nghiệm tương tác chân thực như nhân viên bán hàng xuất sắc nhất của bạn.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="p-8 rounded-3xl bg-[#111726] border border-white/10 space-y-4 hover:border-brand-500/50 transition">
+                    <div class="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-400 flex items-center justify-center font-bold text-xl">⚡</div>
+                    <h3 class="text-lg font-bold text-white">Phản Hồi Siêu Tốc 3 Giây</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">Không để khách hàng chờ đợi dù chỉ 1 phút. Trả lời ngay tức thì 24/7 kể cả ngày lễ Tết.</p>
+                </div>
+
+                <div class="p-8 rounded-3xl bg-[#111726] border border-white/10 space-y-4 hover:border-emerald-500/50 transition">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-xl">🎯</div>
+                    <h3 class="text-lg font-bold text-white">Tự Động Xin Số Điện Thoại</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">Khéo léo gợi ý và thu thập SĐT khách hàng tiềm năng đưa thẳng vào bảng CRM quản trị.</p>
+                </div>
+
+                <div class="p-8 rounded-3xl bg-[#111726] border border-white/10 space-y-4 hover:border-purple-500/50 transition">
+                    <div class="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold text-xl">🧠</div>
+                    <h3 class="text-lg font-bold text-white">Học Sâu Từ Website Của Bạn</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed">Chỉ cần dán link website công ty, AI tự động cào dữ liệu và học thuộc lòng toàn bộ bảng giá, dịch vụ.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-white/10 text-center text-xs text-slate-500 space-y-2">
+        <div>© 2026 LUXA AI Platform • Bản Quyền Thuộc Về Lê Văn Thiện</div>
+        <div>Hỗ trợ tích hợp Facebook Fanpage, Zalo OA, Telegram & Website Chatbot</div>
+    </footer>
+
+    <!-- NHÚNG TRỰC TIẾP WIDGET BONG BÓNG ĐÓN CHÀO CỦA LUXA AI -->
+    <script>
+        // Lấy domain bot từ tham số URL (?id=...) hoặc mặc định
+        const params = new URLSearchParams(window.location.search);
+        const botId = params.get('id') || 'demo';
+        
+        const script = document.createElement('script');
+        script.src = `/static/widget.js?id=${encodeURIComponent(botId)}`;
+        document.body.appendChild(script);
+    </script>
+</body>
+</html>
