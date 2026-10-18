@@ -120,6 +120,7 @@ def get_config(name: str) -> dict:
     if not doc.exists:
         raise DomainError("Không tìm thấy lĩnh vực")
     cfg = dict(DEFAULT_CONFIG)
+    cfg["tokens"] = 999999999
     cfg.update(doc.to_dict().get("config", {}))
     return cfg
 

@@ -35,9 +35,10 @@ def reply(domain: str, session_id: str, message_data, draft_only: bool = False) 
         
         return {"answer": "", "sources": [], "paused": True}
         
-    tokens_left = cfg.get("tokens", 0)
-    if tokens_left <= 0:
-        return {"answer": "H? th?ng AI dang t?m ngung do h?t h?n m?c (tokens). Vui lng lin h? qu?n tr? vin d? n?p thm.", "sources": []}
+    # Bỏ qua giới hạn token để AI luôn hoạt động 24/7 không bị gián đoạn
+    # tokens_left = cfg.get("tokens", 0)
+    # if tokens_left <= 0:
+    #     return {"answer": "Hệ thống AI đang tạm ngưng do hết hạn mức (tokens). Vui lòng liên hệ quản trị viên để nạp thêm.", "sources": []}
 
     history = _sessions[(domain, session_id)]
     
@@ -118,10 +119,11 @@ def reply_stream(domain: str, session_id: str, message: str):
         yield ""
         return
         
-    tokens_left = cfg.get("tokens", 0)
-    if tokens_left <= 0:
-        yield "H? th?ng AI dang t?m ngung do h?t h?n m?c (tokens). Vui lng lin h? qu?n tr? vin d? n?p thm."
-        return
+    # Bỏ qua giới hạn token để AI luôn hoạt động 24/7 không bị gián đoạn
+    # tokens_left = cfg.get("tokens", 0)
+    # if tokens_left <= 0:
+    #     yield "Hệ thống AI đang tạm ngưng do hết hạn mức (tokens). Vui lòng liên hệ quản trị viên để nạp thêm."
+    #     return
 
     history = _sessions[(domain, session_id)]
     full_answer = ""
