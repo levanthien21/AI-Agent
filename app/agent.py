@@ -1,25 +1,50 @@
-"""Loi agent: truy xu?t ki?n th?c theo linh v?c r?i sinh cu tr? l?i."""
+"""Lõi agent: truy xuất kiến thức theo lĩnh vực rồi sinh câu trả lời."""
 from collections import defaultdict
 import time
-from . import config, llm, store
+from . import config, llm, store, autosurvey_knowledge
 
 _sessions: dict[tuple[str, str], list[dict]] = defaultdict(list)
+_synced_domains: set[str] = set()
+
+def sync_autosurvey_to_firestore():
+    if "SPSS Khảo Sát" in _synced_domains:
+        return
+    try:
+        store.db().collection("domains").document("SPSS Khảo Sát").set({
+            "config": {
+                "display_name": "AutoSurvey VN - Trợ Lý Khảo Sát & SPSS",
+                "greeting": "Dạ AutoSurvey VN chào bạn! 🚀 Bạn đang cần chạy gấp deadline khảo sát đúng không ạ? Bạn gửi link form để em kiểm tra cấu trúc câu hỏi và tư vấn gói báo giá nhanh nhất cho mình nhé! 📊",
+                "persona": autosurvey_knowledge.AUTOSURVEY_PERSONA,
+                "tokens": 999999999,
+                "max_tokens": 600,
+                "active": True
+            }
+        }, merge=True)
+        _synced_domains.add("SPSS Khảo Sát")
+    except Exception:
+        pass
 
 RULES = """
-QUY T?C B?T BU?C VA SANG T?O:
-1. Uu tin s? d?ng ph?n "KI?N TH?C" du?c cung c?p d? tr? l?i cc cu h?i v? thng tin ring, quy d?nh, ho?c d? li?u c?a t? ch?c.
-2. N?U "KI?N TH?C" KHONG CO CAU TR? L?I, ho?c khch h?i cc ki?n th?c ph? thng, tr chuy?n ngoi l?, b?n HAY SANG T?O v s? d?ng v?n hi?u bi?t chung c?a mnh d? tr? l?i th?t thng minh, nhi?t tnh v ph h?p v?i vai tr c?a mnh.
-3. Lun nh?p vai xu?t s?c, gi?ng van t? nhin, thn thi?n nhu m?t ngu?i th?t dang tr chuy?n.
-4. KHONG BAO GI? ni cu: "{fallback}" tr? khi h? th?ng c?a b?n b? l?i khng th? l?y du?c thng tin.
-5. Tuy?t d?i khng nh?c d?n vi?c b?n l AI hay b?n dang d?c t? "ti li?u", "ki?n th?c du?c cung c?p". Khng dng cc c?m t? nhu "D?a trn thng tin du?c cung c?p...".
+QUY TẮC BẮT BUỘC VÀ SÁNG TẠO:
+1. Ưu tiên sử dụng phần "KIẾN THỨC" được cung cấp để trả lời các câu hỏi về thông tin riêng, quy định, gói cước, hoặc dữ liệu của tổ chức.
+2. NẾU "KIẾN THỨC" KHÔNG CÓ CÂU TRẢ LỜI, hoặc khách hỏi các kiến thức phổ thông, trò chuyện ngoài lề, bạn HÃY SÁNG TẠO và sử dụng vốn hiểu biết chung của mình để trả lời thật thông minh, nhiệt tình và phù hợp với vai trò của mình.
+3. Luôn nhập vai xuất sắc, giọng văn tự nhiên, thân thiện, đồng cảm với áp lực deadline.
+4. KHÔNG BAO GIỜ nói câu: "{fallback}" trừ khi hệ thống của bạn bị lỗi không thể lấy được thông tin.
+5. Tuyệt đối không nhắc đến việc bạn là AI hay bạn đang đọc từ "tài liệu", "kiến thức được cung cấp". Không dùng các cụm từ như "Dựa trên thông tin được cung cấp...".
 """
 
-def _system_prompt(cfg: dict) -> str:
+def _system_prompt(cfg: dict, domain: str = "") -> str:
+    if domain == "SPSS Khảo Sát":
+        return autosurvey_knowledge.AUTOSURVEY_PERSONA + "\n" + RULES.format(fallback=cfg.get("fallback", ""))
     return cfg["persona"].strip() + "\n" + RULES.format(fallback=cfg["fallback"])
 
 def reply(domain: str, session_id: str, message_data, draft_only: bool = False) -> dict:
     t0 = time.time()
     cfg = store.get_config(domain)
+    
+    # Sync AutoSurvey persona to Firestore in background
+    if domain == "SPSS Khảo Sát":
+        sync_autosurvey_to_firestore()
     
     if session_id in cfg.get("paused_sessions", []):
         text_content = ""
@@ -35,11 +60,6 @@ def reply(domain: str, session_id: str, message_data, draft_only: bool = False) 
         
         return {"answer": "", "sources": [], "paused": True}
         
-    # Bỏ qua giới hạn token để AI luôn hoạt động 24/7 không bị gián đoạn
-    # tokens_left = cfg.get("tokens", 0)
-    # if tokens_left <= 0:
-    #     return {"answer": "Hệ thống AI đang tạm ngưng do hết hạn mức (tokens). Vui lòng liên hệ quản trị viên để nạp thêm.", "sources": []}
-
     history = _sessions[(domain, session_id)]
     
     text_content = ""
@@ -56,12 +76,15 @@ def reply(domain: str, session_id: str, message_data, draft_only: bool = False) 
         prev_user = next((h["text"] for h in reversed(history) if h["role"] == "user"), "")
         query = f"{prev_user}\n{text_content}"
 
-    all_text = store.get_all_knowledge(domain)
-    if len(all_text) > 50000:
-        all_text = all_text[:50000] + "\n...(cn ti?p)"
-    knowledge = all_text or "(khng c thng tin lin quan)"
+    if domain == "SPSS Khảo Sát":
+        knowledge = autosurvey_knowledge.AUTOSURVEY_PERSONA
+    else:
+        all_text = store.get_all_knowledge(domain)
+        if len(all_text) > 50000:
+            all_text = all_text[:50000] + "\n...(còn tiếp)"
+        knowledge = all_text or "(không có thông tin liên quan)"
 
-    prompt_text = f"KI?N TH?C:\n{knowledge}\n\nTIN NH?N C?A KHACH:\n{text_content}"
+    prompt_text = f"KIẾN THỨC:\n{knowledge}\n\nTIN NHẮN CỦA KHÁCH:\n{text_content}"
     
     # Construct llm payload
     if image_urls:
@@ -71,40 +94,39 @@ def reply(domain: str, session_id: str, message_data, draft_only: bool = False) 
     else:
         prompt_payload = prompt_text
 
-    max_tok = cfg.get("max_tokens", 150)
-    timeout_sec = cfg.get("timeout", 15)
+    max_tok = max(cfg.get("max_tokens", 600), 600)
+    timeout_sec = cfg.get("timeout", 20)
     
     log_messages = []
-    log_messages.append(f"Nh?n tin nh?n t? {session_id}. Lo?i: {'C Hnh ?nh' if image_urls else 'Text'}")
-    log_messages.append(f"Context stuff length: {len(all_text)} chars")
+    log_messages.append(f"Nhận tin nhắn từ {session_id}. Loại: {'Có Hình ảnh' if image_urls else 'Text'}")
+    log_messages.append(f"Context stuff length: {len(knowledge)} chars")
     
     try:
         import concurrent.futures
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(llm.generate, _system_prompt(cfg), history[-config.HISTORY_TURNS * 2 :], prompt_payload, max_tok)
+            future = executor.submit(llm.generate, _system_prompt(cfg, domain), history[-config.HISTORY_TURNS * 2 :], prompt_payload, max_tok)
             answer = future.result(timeout=timeout_sec)
         
         if not answer:
             answer = cfg["fallback"]
     except concurrent.futures.TimeoutError:
-        log_messages.append("L?i: Timeout API")
+        log_messages.append("Lỗi: Timeout API")
         answer = cfg["fallback"]
     except Exception as e:
-        log_messages.append(f"L?i API: {e}")
+        log_messages.append(f"Lỗi API: {e}")
         answer = cfg["fallback"]
         
     t1 = time.time()
-    log_messages.append(f"Th?i gian x? l: {round(t1-t0, 2)}s")
+    log_messages.append(f"Thời gian xử lý: {round(t1-t0, 2)}s")
     
     cost = len(text_content) + len(answer) + (500 * len(image_urls)) # approximation for images
     store.deduct_tokens(domain, cost)
     
     debug_log = "\n".join(log_messages)
     
-    # save_chat_history needs to support debug_log. We will add it to kwargs.
-    store.save_chat_history(domain, session_id, text_content if text_content else "[Hnh ?nh]", answer, cost, source="facebook" if "fb" in session_id else "web", debug_log=debug_log)
+    store.save_chat_history(domain, session_id, text_content if text_content else "[Hình ảnh]", answer, cost, source="facebook" if "fb" in session_id else "web", debug_log=debug_log)
 
-    history += [{"role": "user", "text": text_content if text_content else "[Hnh ?nh]"}, {"role": "model", "text": answer}]
+    history += [{"role": "user", "text": text_content if text_content else "[Hình ảnh]"}, {"role": "model", "text": answer}]
     del history[: -config.HISTORY_TURNS * 2]
     return {"answer": answer, "sources": []}
 
@@ -115,49 +137,49 @@ def reply_stream(domain: str, session_id: str, message: str):
     t0 = time.time()
     cfg = store.get_config(domain)
     
+    if domain == "SPSS Khảo Sát":
+        sync_autosurvey_to_firestore()
+    
     if session_id in cfg.get("paused_sessions", []):
         yield ""
         return
-        
-    # Bỏ qua giới hạn token để AI luôn hoạt động 24/7 không bị gián đoạn
-    # tokens_left = cfg.get("tokens", 0)
-    # if tokens_left <= 0:
-    #     yield "Hệ thống AI đang tạm ngưng do hết hạn mức (tokens). Vui lòng liên hệ quản trị viên để nạp thêm."
-    #     return
 
     history = _sessions[(domain, session_id)]
     full_answer = ""
-    log_messages = [f"Nh?n tin nh?n t? {session_id}. Lo?i: Text"]
+    log_messages = [f"Nhận tin nhắn từ {session_id}. Loại: Text"]
     try:
         query = message
         if len(message) < 25 and history:
             prev_user = next((h["text"] for h in reversed(history) if h["role"] == "user"), "")
             query = f"{prev_user}\n{message}"
 
-        all_text = store.get_all_knowledge(domain)
-        if len(all_text) > 50000:
-            all_text = all_text[:50000] + "\n...(cn ti?p)"
-        knowledge = all_text or "(khng c thng tin lin quan)"
-        log_messages.append(f"Context stuff length: {len(all_text)} chars")
+        if domain == "SPSS Khảo Sát":
+            knowledge = autosurvey_knowledge.AUTOSURVEY_PERSONA
+        else:
+            all_text = store.get_all_knowledge(domain)
+            if len(all_text) > 50000:
+                all_text = all_text[:50000] + "\n...(còn tiếp)"
+            knowledge = all_text or "(không có thông tin liên quan)"
+        log_messages.append(f"Context stuff length: {len(knowledge)} chars")
 
-        prompt = f"KI?N TH?C:\n{knowledge}\n\nTIN NH?N C?A KHACH:\n{message}"
+        prompt = f"KIẾN THỨC:\n{knowledge}\n\nTIN NHẮN CỦA KHÁCH:\n{message}"
 
-        max_tok = cfg.get("max_tokens", 150)
+        max_tok = max(cfg.get("max_tokens", 600), 600)
         
-        for chunk in llm.generate_stream(_system_prompt(cfg), history[-config.HISTORY_TURNS * 2 :], prompt, max_tok):
+        for chunk in llm.generate_stream(_system_prompt(cfg, domain), history[-config.HISTORY_TURNS * 2 :], prompt, max_tok):
             full_answer += chunk
             yield chunk
     except Exception as e:
-        log_messages.append(f"L?i API: {e}")
+        log_messages.append(f"Lỗi API: {e}")
         if not full_answer:
-            yield (cfg.get("fallback") or "H? th?ng dang b?n, vui lng th? l?i sau t pht.")
-            full_answer = (cfg.get("fallback") or "H? th?ng dang b?n.")
+            yield (cfg.get("fallback") or "Hệ thống đang bận, vui lòng thử lại sau ít phút.")
+            full_answer = (cfg.get("fallback") or "Hệ thống đang bận.")
         else:
-            yield "\n[L?i k?t n?i b? ng?t]"
+            yield "\n[Lỗi kết nối bị ngắt]"
 
     if full_answer:
         t1 = time.time()
-        log_messages.append(f"Th?i gian x? l: {round(t1-t0, 2)}s")
+        log_messages.append(f"Thời gian xử lý: {round(t1-t0, 2)}s")
         cost = len(message) + len(full_answer)
         store.deduct_tokens(domain, cost)
         debug_log = "\n".join(log_messages)

@@ -101,8 +101,19 @@ def debug_ai():
 
 @app.get("/api/domains/{name}/public")
 def public_info(name: str):
+    if name == "SPSS Khảo Sát":
+        return {
+            "display_name": "AutoSurvey VN - Trợ Lý Khảo Sát & SPSS",
+            "greeting": "Dạ AutoSurvey VN chào bạn! 🚀 Bạn đang cần chạy gấp deadline khảo sát đúng không ạ? Bạn gửi link form để em kiểm tra cấu trúc câu hỏi và tư vấn gói báo giá nhanh nhất cho mình nhé! 📊"
+        }
     cfg = store.get_config(name)
     return {"display_name": cfg["display_name"] or name, "greeting": cfg["greeting"]}
+
+@app.get("/api/sync-prompt")
+def sync_prompt():
+    from . import agent
+    agent.sync_autosurvey_to_firestore()
+    return {"ok": True, "message": "Đã đồng bộ kiến thức AutoSurvey VN thành công!"}
 
 
 # ---------- Quản trị: nạp kiến thức, cấu hình ----------
